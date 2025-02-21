@@ -20,7 +20,21 @@ python3 manage.py runserver
 ```
 
 ### Frontend (React):
+##### 📥 Installation
+**Clone the repository:**
 ```sh
-npm i
+git https://github.com/freger-ucu/secure-messenger/tree/develop
+cd secure-mesenger/frontend
+```
+
+#### Install dependencies:
+```sh
+npm install
+```
+#### 🔧 Running the Development Server
+Start the app in development mode:
+```sh
 npm run dev
 ```
+
+The app will be running at http://localhost:5173/ by default.
