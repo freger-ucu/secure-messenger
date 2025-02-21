@@ -20,7 +20,12 @@ python3 manage.py runserver
 ```
 
 ### Frontend (React):
+#### Installation (Run once)
 ```sh
 npm i
+```
+
+#### Running server
+```sh
 npm run dev
 ```
