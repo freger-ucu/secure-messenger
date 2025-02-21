@@ -21,5 +21,6 @@ python3 manage.py runserver
 
 ### Frontend (React):
 ```sh
-npm start
+npm i
+npm run dev
 ```
