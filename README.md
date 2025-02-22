@@ -8,6 +8,7 @@ You need to run the backend and frontend in separate terminals. Follow the steps
 
 > **Note:** Use a virtual environment (`venv`) for best practice.
 
+
 #### Installation (Run once)
 ```sh
 pip install django
