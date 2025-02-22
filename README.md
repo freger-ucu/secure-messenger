@@ -8,6 +8,7 @@ You need to run the backend and frontend in separate terminals. Follow the steps
 
 > **Note:** Use a virtual environment (`venv`) for best practice.
 
+
 #### Installation (Run once)
 ```sh
 pip install django
@@ -38,3 +39,4 @@ npm run dev
 ```
 
 The app will be running at http://localhost:5173/ by default.
+
