@@ -54,7 +54,8 @@ brew services start postgresql@17
 ```sh
 psql -U postgres
 CREATE DATABASE messenger;
-CREATE USER messenger WITH PASSWORD 'development'
+CREATE USER messenger WITH PASSWORD 'development';
+GRANT ALL PRIVILEGES ON DATABASE messenger TO messenger;
 \q
 ```
 Don't forget to 
