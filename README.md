@@ -8,9 +8,11 @@ You need to run the backend and frontend in separate terminals. Follow the steps
 
 > **Note:** Use a virtual environment (`venv`) for best practice.
 
+
 #### Installation (Run once)
 ```sh
 pip install django
+pip install djangorestframework
 python3 manage.py migrate
 ```
 
@@ -38,7 +40,3 @@ npm run dev
 ```
 
 The app will be running at http://localhost:5173/ by default.
-
-
-# TO-DO
-- [] Please, complete gitignores for backend folder
