@@ -29,6 +29,7 @@ git https://github.com/freger-ucu/secure-messenger/tree/develop
 cd secure-mesenger/frontend
 ```
 
+**Since we are actively changing our dependency list on frontend, please, commit 2 steps below before each frontend start**
 #### Install dependencies:
 ```sh
 npm install
