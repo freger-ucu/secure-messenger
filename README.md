@@ -38,3 +38,7 @@ npm run dev
 ```
 
 The app will be running at http://localhost:5173/ by default.
+
+
+# TO-DO
+- [] Please, complete gitignores for backend folder
