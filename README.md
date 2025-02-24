@@ -56,6 +56,7 @@ psql -U postgres
 CREATE DATABASE messenger;
 CREATE USER messenger WITH PASSWORD 'development';
 GRANT ALL PRIVILEGES ON DATABASE messenger TO messenger;
+ALTER DATABASE messenger OWNER TO messenger;
 \q
 ```
 Don't forget to 
