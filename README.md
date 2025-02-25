@@ -13,6 +13,7 @@ You need to run the backend and frontend in separate terminals. Follow the steps
 ```sh
 pip install django
 pip install djangorestframework
+pip install psycopg2-binary
 python3 manage.py migrate
 ```
 
@@ -41,3 +42,24 @@ npm run dev
 ```
 
 The app will be running at http://localhost:5173/ by default.
+
+
+### Database (PostgreSQL):
+Macos setup
+```sh
+brew install postgresql@17
+brew services start postgresql@17
+```
+> **For windows:** https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
+```sh
+psql -U postgres
+CREATE DATABASE messenger;
+CREATE USER messenger WITH PASSWORD 'development';
+GRANT ALL PRIVILEGES ON DATABASE messenger TO messenger;
+ALTER DATABASE messenger OWNER TO messenger;
+\q
+```
+Don't forget to 
+```sh
+python3 manage.py migrate
+```
