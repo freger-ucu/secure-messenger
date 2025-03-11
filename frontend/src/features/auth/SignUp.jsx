@@ -3,18 +3,12 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useState } from "react";
 import { Input, Button, Alert, Typography, message } from "antd";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 
 // Validation Schema
 const schema = yup.object().shape({
-  email: yup
-    .string()
-    .email("Invalid email format")
-    .required("Email is required"),
-  password: yup
-    .string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required"),
+  email: yup.string().email("Invalid email format").required("Email is required"),
+  password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
 });
 
 export default function LoginPage() {
@@ -63,10 +57,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col items-center justify-center h-screen px-4">
       <Typography.Title level={2}>Log In</Typography.Title>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-sm space-y-4"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
         <div>
           <Controller
             name="email"
@@ -75,9 +66,7 @@ export default function LoginPage() {
               <Input {...field} type="email" placeholder="Email" size="large" />
             )}
           />
-          {errors.email && (
-            <p className="text-red-500 text-sm">{errors.email.message}</p>
-          )}
+          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
         </div>
         <div>
           <Controller
@@ -87,27 +76,13 @@ export default function LoginPage() {
               <Input.Password {...field} placeholder="Password" size="large" />
             )}
           />
-          {errors.password && (
-            <p className="text-red-500 text-sm">{errors.password.message}</p>
-          )}
+          {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
         </div>
-        <Button
-          type="primary"
-          htmlType="submit"
-          size="large"
-          loading={loading}
-          block
-        >
+        <Button type="primary" htmlType="submit" size="large" loading={loading} block>
           Log In
         </Button>
         {error && <Alert message={error} type="error" showIcon />}
       </form>
-      <Button
-        type="dashed"
-        size="large"
-        className="mt-4 w-full"
-        onClick={() => navigate("/restore")}
-      > Restore Account </Button>
       <p className="mt-4">
         Don't have an account?{" "}
         <Link to="/register" className="text-blue-500">
