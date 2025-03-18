@@ -13,6 +13,7 @@ You need to run the backend and frontend in separate terminals. Follow the steps
 ```sh
 pip install django
 pip install djangorestframework
+pip install djangorestframework-simplejwt
 pip install psycopg2-binary
 python3 manage.py migrate
 ```
@@ -59,7 +60,7 @@ GRANT ALL PRIVILEGES ON DATABASE messenger TO messenger;
 ALTER DATABASE messenger OWNER TO messenger;
 \q
 ```
-Don't forget to 
+Don't forget to
 ```sh
 python3 manage.py migrate
 ```
