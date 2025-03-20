@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router"; // <-- Us
 
 import LoginPage from "./features/auth/Login.jsx";
 import SignUpPage from "./features/auth/SignUp.jsx";
+import NotFoundPage from "./features/NotFound.jsx";
 
 import "./index.css";
 import SeedPhraseRestoration from "./features/auth/SeedPhraseRestoration.jsx";
@@ -15,6 +16,7 @@ createRoot(document.getElementById("root")).render(
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<SignUpPage />} />
       <Route path="/restore" element={<SeedPhraseRestoration />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Router>
 );
