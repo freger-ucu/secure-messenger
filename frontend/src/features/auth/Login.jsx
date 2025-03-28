@@ -2,15 +2,14 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useState } from "react";
-import { Input, Button, Alert, Typography, message } from "antd";
-import { Link, useNavigate } from "react-router";
+import { Input, Button, Alert, Typography, message, Flex, Form } from "antd";
+import { Link, useNavigate } from "react-router"; // Fix import
+
+const { Title, Text } = Typography;
 
 // Validation Schema
 const schema = yup.object().shape({
-  email: yup
-    .string()
-    .email("Invalid email format")
-    .required("Email is required"),
+  username: yup.string().required("Username is required"),
   password: yup
     .string()
     .min(6, "Password must be at least 6 characters")
@@ -35,24 +34,27 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/login", {
+      const response = await fetch("http://127.0.0.1:8000/auth/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       const result = await response.json();
+      console.log(result);
 
       if (!response.ok) {
         throw new Error(result.message || "Login failed");
       }
 
-      // Save token in session storage (or localStorage if you want it persistent)
-      sessionStorage.setItem("token", result.token);
+      // Save tokens in session storage
+      sessionStorage.setItem("accessToken", result.access);
+      sessionStorage.setItem("refreshToken", result.refresh);
+
       message.success("Login successful!");
 
-      // Redirect user to dashboard
-      navigate("/dashboard");
+      // Redirect user to the chat page
+      navigate("/chat");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -61,59 +63,107 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen px-4">
-      <Typography.Title level={2}>Log In</Typography.Title>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-sm space-y-4"
-      >
-        <div>
-          <Controller
-            name="email"
-            control={control}
-            render={({ field }) => (
-              <Input {...field} type="email" placeholder="Email" size="large" />
-            )}
-          />
-          {errors.email && (
-            <p className="text-red-500 text-sm">{errors.email.message}</p>
-          )}
-        </div>
-        <div>
-          <Controller
-            name="password"
-            control={control}
-            render={({ field }) => (
-              <Input.Password {...field} placeholder="Password" size="large" />
-            )}
-          />
-          {errors.password && (
-            <p className="text-red-500 text-sm">{errors.password.message}</p>
-          )}
-        </div>
-        <Button
-          type="primary"
-          htmlType="submit"
-          size="large"
-          loading={loading}
-          block
-        >
+    <Flex
+      vertical
+      align="center"
+      justify="center"
+      style={{ minHeight: "100vh", padding: "0 16px" }}
+    >
+      <Flex vertical style={{ width: "100%", maxWidth: "400px" }} gap="middle">
+        <Title level={2} style={{ textAlign: "center", margin: "0 0 24px" }}>
           Log In
+        </Title>
+
+        <form onSubmit={handleSubmit(onSubmit)} style={{ width: "100%" }}>
+          <Flex vertical gap="large">
+            <Flex vertical gap="small">
+              <Form.Item style={{ marginBottom: 0 }}>
+                <Controller
+                  name="username"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Username"
+                      size="large"
+                    />
+                  )}
+                />
+                {errors.username && (
+                  <Text
+                    type="danger"
+                    style={{ fontSize: "14px", marginTop: "4px" }}
+                  >
+                    {errors.username.message}
+                  </Text>
+                )}
+              </Form.Item>
+            </Flex>
+
+            <Flex vertical gap="small">
+              <Form.Item style={{ marginBottom: 0 }}>
+                <Controller
+                  name="password"
+                  control={control}
+                  render={({ field }) => (
+                    <Input.Password
+                      {...field}
+                      placeholder="Password"
+                      size="large"
+                    />
+                  )}
+                />
+                {errors.password && (
+                  <Text
+                    type="danger"
+                    style={{ fontSize: "14px", marginTop: "4px" }}
+                  >
+                    {errors.password.message}
+                  </Text>
+                )}
+              </Form.Item>
+            </Flex>
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              loading={loading}
+              block
+            >
+              Log In
+            </Button>
+
+            {error && (
+              <Alert
+                message={error}
+                type="error"
+                showIcon
+                style={{ marginTop: "8px" }}
+              />
+            )}
+          </Flex>
+        </form>
+
+        <Button
+          type="dashed"
+          size="large"
+          block
+          onClick={() => navigate("/restore")}
+        >
+          Restore Account
         </Button>
-        {error && <Alert message={error} type="error" showIcon />}
-      </form>
-      <Button
-        type="dashed"
-        size="large"
-        className="mt-4 w-full"
-        onClick={() => navigate("/restore")}
-      > Restore Account </Button>
-      <p className="mt-4">
-        Don't have an account?{" "}
-        <Link to="/register" className="text-blue-500">
-          Sign Up
-        </Link>
-      </p>
-    </div>
+
+        <Flex justify="center" style={{ marginTop: "8px" }}>
+          <Text>
+            Don't have an account?{" "}
+            <Link to="/register" style={{ color: "#1890ff" }}>
+              Sign Up
+            </Link>
+          </Text>
+        </Flex>
+      </Flex>
+    </Flex>
   );
 }
