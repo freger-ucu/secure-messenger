@@ -8,6 +8,9 @@ import NotFoundPage from "./features/NotFound.jsx";
 
 import "./index.css";
 import SeedPhraseRestoration from "./features/auth/SeedPhraseRestoration.jsx";
+import Chat from "./features/chat/chat.jsx";
+
+import ProtectedRoute from "./components/protectedRoute.jsx";
 
 createRoot(document.getElementById("root")).render(
   <Router>
@@ -16,7 +19,18 @@ createRoot(document.getElementById("root")).render(
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<SignUpPage />} />
       <Route path="/restore" element={<SeedPhraseRestoration />} />
+<<<<<<< HEAD
       <Route path="*" element={<NotFoundPage />} />
+=======
+      {/* Protect Chat Route */}
+      <Route
+        path="/chat"
+        element={ <ProtectedRoute>
+          <Chat />
+        </ProtectedRoute>
+        } />
+      <Route path="*" element={<LoginPage />} />
+>>>>>>> origin/develop
     </Routes>
   </Router>
 );
