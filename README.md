@@ -11,10 +11,7 @@ You need to run the backend and frontend in separate terminals. Follow the steps
 
 #### Installation (Run once)
 ```sh
-pip install django
-pip install djangorestframework
-pip install djangorestframework-simplejwt
-pip install psycopg2-binary
+pip3 install -r requirements.txt
 python3 manage.py migrate
 ```
 
