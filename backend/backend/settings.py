@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     "accounts",
     "api",
+    "corsheaders"
 ]
 
 
@@ -104,7 +105,7 @@ DATABASES = {
         'NAME': 'messenger',
         'USER': 'messenger',
         'PASSWORD': 'development',
-        'HOST': 'localhost',
+        'HOST': 'db',
         'PORT': '5432'
     }
 }
