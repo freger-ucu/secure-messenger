@@ -54,7 +54,7 @@ export default function LoginPage() {
       message.success("Login successful!");
 
       // Redirect user to the chat page
-      navigate("/chat");
+      navigate("/");
     } catch (err) {
       setError(err.message);
     } finally {

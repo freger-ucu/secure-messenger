@@ -1,8 +1,4 @@
 import { useState } from "react";
-<<<<<<< HEAD
-import { Input, Button, Alert, Typography, message } from "antd";
-import { Link, useNavigate } from "react-router";
-=======
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -20,7 +16,6 @@ import { Link, useNavigate } from "react-router"; // Fix import
 import { CopyOutlined, CheckOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
->>>>>>> origin/develop
 
 // Validation Schema
 const schema = yup.object().shape({
