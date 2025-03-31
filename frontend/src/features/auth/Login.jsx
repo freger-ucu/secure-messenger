@@ -157,7 +157,7 @@ export default function LoginPage() {
 
         <Flex justify="center" style={{ marginTop: "8px" }}>
           <Text>
-            Don't have an account?{" "}
+            Dont have an account?{" "}
             <Link to="/register" style={{ color: "#1890ff" }}>
               Sign Up
             </Link>

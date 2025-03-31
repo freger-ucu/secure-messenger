@@ -19,9 +19,6 @@ createRoot(document.getElementById("root")).render(
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<SignUpPage />} />
       <Route path="/restore" element={<SeedPhraseRestoration />} />
-<<<<<<< HEAD
-      <Route path="*" element={<NotFoundPage />} />
-=======
       {/* Protect Chat Route */}
       <Route
         path="/chat"
@@ -29,8 +26,7 @@ createRoot(document.getElementById("root")).render(
           <Chat />
         </ProtectedRoute>
         } />
-      <Route path="*" element={<LoginPage />} />
->>>>>>> origin/develop
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Router>
 );
