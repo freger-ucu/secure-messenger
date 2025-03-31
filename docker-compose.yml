@@ -1,21 +1,21 @@
 version: '3.9'
 
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: backend.Dockerfile
-    volumes:
-      - ./backend:/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    environment:
-      - DB_HOST=db
-      - DB_NAME=messenger
-      - DB_USER=messenger
-      - DB_PASSWORD=development
+#  backend:
+#    build:
+#      context: .
+#      dockerfile: backend.Dockerfile
+#    volumes:
+#      - ./backend:/app
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - db
+#    environment:
+#      - DB_HOST=db
+#      - DB_NAME=messenger
+#      - DB_USER=messenger
+#      - DB_PASSWORD=development
 
   frontend:
     build:
@@ -24,7 +24,7 @@ services:
     volumes:
       - ./frontend:/app
     ports:
-      - "3000:3000"
+      - "5173:5173"
 
   db:
     image: postgres:14
