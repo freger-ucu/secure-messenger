@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from .models import Account
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -16,9 +17,10 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
+    seedphrase = serializers.CharField(write_only = True, required = True)
     class Meta:
         model = User
-        fields = ('username', 'password', 'password2', 'first_name')
+        fields = ['username', 'password', 'password2', 'seedphrase']
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -27,8 +29,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        user = User.objects.create(username = validated_data['username'],
-                                   first_name = validated_data['first_name'])
+        user = User.objects.create(username = validated_data['username'])
+        Account.objects.create(user = user, seedphrase = validated_data['seedphrase'])
         user.set_password(validated_data['password'])
         user.save()
 
