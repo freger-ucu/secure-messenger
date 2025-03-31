@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     'rest_framework_simplejwt',
-    "api"
+    "api",
+    'rest_framework_simplejwt.token_blacklist'
 ]
 
 
@@ -99,6 +100,12 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '5432'
     }
+}
+
+SIMPLE_JWT = {
+    # налаштування JWT
+    'BLACKLIST_AFTER_ROTATION': True,
+    'TOKEN_BLACKLIST': True,
 }
 
 
