@@ -1,6 +1,5 @@
 // Core Stylesheet
 import './App.css'
-import Login from './features/auth/Login'
 
 // For testing purposes only 
 
@@ -9,7 +8,7 @@ function App() {
 
   return (
     <>
-      <Login />
+      <h1 className='text-3xl font-bold'>Hey There!</h1>
     </>
   )
 }

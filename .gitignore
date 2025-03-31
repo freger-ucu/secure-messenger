@@ -1,7 +1,2 @@
 .idea
 backend/.venv
-backend/accounts/__pycache__/
-backend/accounts/migrations/__pycache__/
-backend/api/__pycache__/
-backend/api/migrations/__pycache__/
-*.pyc

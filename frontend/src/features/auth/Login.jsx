@@ -1,21 +1,24 @@
-// src/pages/LoginPage.jsx
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useState } from "react";
-import { Form, Input, Button, Alert, Typography } from "antd";
+import { Input, Button, Alert, Typography, message, Flex, Form } from "antd";
+import { Link, useNavigate } from "react-router"; // Fix import
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 // Validation Schema
 const schema = yup.object().shape({
-  email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
+  username: yup.string().required("Username is required"),
+  password: yup
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
 });
 
-const LoginPage = () => {
+export default function LoginPage() {
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm({
@@ -24,49 +27,143 @@ const LoginPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const onSubmit = async (data) => {
     setLoading(true);
     setError("");
 
     try {
-      // Placeholder for API call
-      console.log("Logging in with:", data);
-      // Simulate API delay
-      await new Promise((res) => setTimeout(res, 1000));
+      const response = await fetch("http://127.0.0.1:8000/auth/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-      // TODO: Implement real authentication logic
-      alert("Login Successful!");
+      const result = await response.json();
+      console.log(result);
+
+      if (!response.ok) {
+        throw new Error(result.message || "Login failed");
+      }
+
+      // Save tokens in session storage
+      sessionStorage.setItem("accessToken", result.access);
+      sessionStorage.setItem("refreshToken", result.refresh);
+
+      message.success("Login successful!");
+
+      // Redirect user to the chat page
+      navigate("/chat");
     } catch (err) {
-      setError("Login failed. Please try again.");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="w-full max-w-md p-6 bg-white shadow-lg rounded-lg">
-        <Title level={2} className="text-center">Login</Title>
-        <Form onFinish={handleSubmit(onSubmit)} layout="vertical">
-          <Form.Item label="Email" validateStatus={errors.email ? "error" : ""} help={errors.email?.message}>
-            <Input {...register("email")} placeholder="Enter your email" />
-          </Form.Item>
+    <Flex
+      vertical
+      align="center"
+      justify="center"
+      style={{ minHeight: "100vh", padding: "0 16px" }}
+    >
+      <Flex vertical style={{ width: "100%", maxWidth: "400px" }} gap="middle">
+        <Title level={2} style={{ textAlign: "center", margin: "0 0 24px" }}>
+          Log In
+        </Title>
 
-          <Form.Item label="Password" validateStatus={errors.password ? "error" : ""} help={errors.password?.message}>
-            <Input.Password {...register("password")} placeholder="Enter your password" />
-          </Form.Item>
+        <form onSubmit={handleSubmit(onSubmit)} style={{ width: "100%" }}>
+          <Flex vertical gap="large">
+            <Flex vertical gap="small">
+              <Form.Item style={{ marginBottom: 0 }}>
+                <Controller
+                  name="username"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Username"
+                      size="large"
+                    />
+                  )}
+                />
+                {errors.username && (
+                  <Text
+                    type="danger"
+                    style={{ fontSize: "14px", marginTop: "4px" }}
+                  >
+                    {errors.username.message}
+                  </Text>
+                )}
+              </Form.Item>
+            </Flex>
 
-          {error && <Alert message={error} type="error" showIcon className="mb-4" />}
+            <Flex vertical gap="small">
+              <Form.Item style={{ marginBottom: 0 }}>
+                <Controller
+                  name="password"
+                  control={control}
+                  render={({ field }) => (
+                    <Input.Password
+                      {...field}
+                      placeholder="Password"
+                      size="large"
+                    />
+                  )}
+                />
+                {errors.password && (
+                  <Text
+                    type="danger"
+                    style={{ fontSize: "14px", marginTop: "4px" }}
+                  >
+                    {errors.password.message}
+                  </Text>
+                )}
+              </Form.Item>
+            </Flex>
 
-          <Button type="primary" htmlType="submit" block loading={loading} className="mt-2">
-            {loading ? "Logging in..." : "Login"}
-          </Button>
-        </Form>
-      </div>
-    </div>
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              loading={loading}
+              block
+            >
+              Log In
+            </Button>
+
+            {error && (
+              <Alert
+                message={error}
+                type="error"
+                showIcon
+                style={{ marginTop: "8px" }}
+              />
+            )}
+          </Flex>
+        </form>
+
+        <Button
+          type="dashed"
+          size="large"
+          block
+          onClick={() => navigate("/restore")}
+        >
+          Restore Account
+        </Button>
+
+        <Flex justify="center" style={{ marginTop: "8px" }}>
+          <Text>
+            Don't have an account?{" "}
+            <Link to="/register" style={{ color: "#1890ff" }}>
+              Sign Up
+            </Link>
+          </Text>
+        </Flex>
+      </Flex>
+    </Flex>
   );
-};
-
-export default LoginPage;
-``
+}
