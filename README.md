@@ -1,6 +1,11 @@
 # Project Setup Guide
 
-## Running the Backend and Frontend
+## Running with Docker
+```sh
+docker-compose up --build
+```
+
+## Running the Backend and Frontend separately
 
 You need to run the backend and frontend in separate terminals. Follow the steps below to set up and start both.
 

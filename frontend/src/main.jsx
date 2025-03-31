@@ -8,7 +8,7 @@ import NotFoundPage from "./features/NotFound.jsx";
 
 import "./index.css";
 import SeedPhraseRestoration from "./features/auth/SeedPhraseRestoration.jsx";
-import Chat from "./features/chat/chat.jsx";
+import Chat from "./features/chat/Chat.jsx";
 
 import ProtectedRoute from "./components/protectedRoute.jsx";
 
