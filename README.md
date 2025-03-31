@@ -18,6 +18,7 @@ pip install psycopg2-binary
 python3 manage.py migrate
 ```
 
+
 #### Running server
 ```sh
 python3 manage.py runserver
