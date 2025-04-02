@@ -2,8 +2,9 @@
 
 ## Running with Docker
 ```sh
-docker-compose up --build
+docker compose -f FILENAME.yml  --build
 ```
+> for development use docker-compose-dev as FILENAME, for production use docker-compose-prod as FILENAME.
 
 ## Running the Backend and Frontend separately
 

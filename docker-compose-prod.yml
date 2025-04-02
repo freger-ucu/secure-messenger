@@ -32,7 +32,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: frontend.Dockerfile
+      dockerfile: frontend-prod.Dockerfile
     volumes:
       - ./frontend:/app
       - /app/node_modules  # Avoid overwriting node_modules
