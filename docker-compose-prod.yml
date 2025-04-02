@@ -32,11 +32,16 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: frontend.Dockerfile
+      dockerfile: frontend-prod.Dockerfile
     volumes:
       - ./frontend:/app
+      - /app/node_modules  # Avoid overwriting node_modules
     ports:
-      - "5173:80"
+      - "5173:5173"  # Expose Vite's dev server
+    environment:
+      - NODE_ENV=development
+    command: npm run dev -- --host
+
 
 volumes:
   postgres_data:

@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+
+  db:
+    image: postgres:14
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: messenger
+      POSTGRES_USER: messenger
+      POSTGRES_PASSWORD: development
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=messenger
+      - DB_USER=messenger
+      - DB_PASSWORD=development
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend-dev.Dockerfile
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Avoid overwriting node_modules
+    ports:
+      - "5173:5173"  # Expose Vite's dev server
+    environment:
+      - NODE_ENV=development
+    command: npm run dev -- --host
+
+
+volumes:
+  postgres_data:
