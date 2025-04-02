@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -12,12 +12,12 @@ import {
   Flex,
   Form,
 } from "antd";
-import { Link, useNavigate } from "react-router"; // Fix import
-import { CopyOutlined, CheckOutlined } from "@ant-design/icons";
+import { Link, useNavigate } from "react-router";
+import { CopyOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
-// Validation Schema
+// Validation Schema - Removed seedphrase as it's handled automatically
 const schema = yup.object().shape({
   username: yup
     .string()
@@ -35,7 +35,6 @@ const schema = yup.object().shape({
     .string()
     .oneOf([yup.ref("password"), null], "Passwords must match")
     .required("Confirm Password is required"),
-  first_name: yup.string().required("First name is required"),
 });
 
 // Function to generate a random 6-word seed phrase
@@ -109,21 +108,30 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
+    defaultValues: {
+      username: "",
+      password: "",
+      password2: "",
+    },
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [seedPhrase, setSeedPhrase] = useState("");
-  const [seedPhraseModalVisible, setSeedPhraseModalVisible] = useState(false);
-  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
+
+  // Generate a seed phrase when component mounts
+  useEffect(() => {
+    setSeedPhrase(generateSeedPhrase());
+  }, []);
 
   const onSubmit = async (data) => {
     setLoading(true);
     setError("");
 
     try {
-      // Call the backend registration endpoint
+      // Call the backend registration endpoint with the automatically generated seed phrase
       const response = await fetch("http://127.0.0.1:8000/auth/register/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,20 +139,38 @@ export default function RegisterPage() {
           username: data.username,
           password: data.password,
           password2: data.password2,
-          first_name: data.first_name,
+          seedphrase: seedPhrase, // Use the automatically generated seed phrase
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Registration failed");
+        // Handle different types of error responses
+        if (result.username) {
+          throw new Error(`Username: ${result.username[0]}`);
+        } else if (result.password) {
+          throw new Error(`Password: ${result.password[0]}`);
+        } else if (result.password2) {
+          throw new Error(`Confirm Password: ${result.password2[0]}`);
+        } else if (result.seedphrase) {
+          // Generate a new seed phrase if there was an issue with this one
+          const newSeedPhrase = generateSeedPhrase();
+          setSeedPhrase(newSeedPhrase);
+          throw new Error(`Seed phrase issue. A new one has been generated.`);
+        } else if (result.detail) {
+          throw new Error(result.detail);
+        } else if (result.message) {
+          throw new Error(result.message);
+        } else if (result.non_field_errors) {
+          throw new Error(result.non_field_errors[0]);
+        } else {
+          throw new Error("Registration failed. Please try again.");
+        }
       }
 
-      // Generate and display the seed phrase after successful registration
-      const newSeedPhrase = generateSeedPhrase();
-      setSeedPhrase(newSeedPhrase);
-      setSeedPhraseModalVisible(true);
+      // Show success modal with the seed phrase
+      setRegistrationSuccess(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -156,9 +182,7 @@ export default function RegisterPage() {
     navigator.clipboard
       .writeText(seedPhrase)
       .then(() => {
-        setCopied(true);
         message.success("Seed phrase copied to clipboard!");
-        setTimeout(() => setCopied(false), 3000);
       })
       .catch((err) => {
         console.error("Failed to copy: ", err);
@@ -167,7 +191,7 @@ export default function RegisterPage() {
   };
 
   const handleModalClose = () => {
-    setSeedPhraseModalVisible(false);
+    setRegistrationSuccess(false);
     // Redirect to login page after closing the modal
     navigate("/login");
   };
@@ -265,32 +289,6 @@ export default function RegisterPage() {
               </Form.Item>
             </Flex>
 
-            {/* First Name Field */}
-            <Flex vertical gap="small">
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Controller
-                  name="first_name"
-                  control={control}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="text"
-                      placeholder="Enter your first name"
-                      size="large"
-                    />
-                  )}
-                />
-                {errors.first_name && (
-                  <Text
-                    type="danger"
-                    style={{ fontSize: "14px", paddingTop: "4px" }}
-                  >
-                    {errors.first_name.message}
-                  </Text>
-                )}
-              </Form.Item>
-            </Flex>
-
             {/* Submit Button */}
             <Button
               type="primary"
@@ -318,10 +316,10 @@ export default function RegisterPage() {
         </form>
       </Flex>
 
-      {/* Seed Phrase Modal */}
+      {/* Success Modal with Seed Phrase */}
       <Modal
         title="Important: Save Your Seed Phrase"
-        open={seedPhraseModalVisible}
+        open={registrationSuccess}
         onCancel={handleModalClose}
         footer={[
           <Button key="close" type="primary" onClick={handleModalClose} block>
@@ -353,12 +351,12 @@ export default function RegisterPage() {
               {seedPhrase}
             </Text>
             <Button
-              icon={copied ? <CheckOutlined /> : <CopyOutlined />}
+              icon={<CopyOutlined />}
               type="text"
               onClick={handleCopy}
               style={{ position: "absolute", top: "8px", right: "8px" }}
             >
-              {copied ? "Copied" : "Copy"}
+              Copy
             </Button>
           </Flex>
 
