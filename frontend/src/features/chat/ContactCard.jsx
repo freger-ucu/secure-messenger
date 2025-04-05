@@ -1,42 +1,94 @@
-import { Flex, Button, Input } from "antd";
-import ContactCard from "./ContactCard";
+import React from "react";
+import { Flex, Typography, Avatar, Badge } from "antd";
+import { formatDistanceToNow } from "date-fns";
 
-const ChatList = () => {
-  const { Search } = Input;
+const ContactCard = ({
+  contact = {
+    id: "",
+    name: "",
+    avatar: "",
+    lastMessage: {
+      text: "",
+      timestamp: new Date(),
+      isRead: true,
+    },
+    isOnline: false,
+  },
+  isSelected = false,
+  onSelect = () => {},
+}) => {
+  // Format the timestamp to relative time (e.g., "5 min ago")
+  const formattedTime = formatDistanceToNow(
+    new Date(contact.lastMessage.timestamp),
+    {
+      addSuffix: true,
+      includeSeconds: true,
+    }
+  );
 
   return (
     <Flex
-      vertical
-      gap={"small"}
+      align="center"
       style={{
+        padding: "12px 16px",
+        borderRadius: "8px",
+        cursor: "pointer",
         width: "100%",
-        height: "100%", // Ensures it stretches fully
-        padding: "24px",
+        backgroundColor: isSelected ? "#e6f7ff" : "white",
+        marginBottom: "8px",
+        border: "1px solid #f0f0f0",
       }}
+      onClick={() => onSelect(contact.id)}
     >
-      {/* Search Bar */}
-      <Search placeholder="Search chats..." size="large" />
+      {/* Avatar with online status indicator */}
+      <Badge
+        dot
+        color={contact.isOnline ? "#52c41a" : "#d9d9d9"}
+        offset={[-4, 32]}
+      >
+        <Avatar size={40} src={contact.avatar} style={{ flexShrink: 0 }}>
+          {!contact.avatar && contact.name.charAt(0).toUpperCase()}
+        </Avatar>
+      </Badge>
 
-      {/* Scrollable Contact List */}
-      <Flex 
-        vertical 
-        style={{ 
-          flex: 1, // Fills available space 
-          overflowY: "auto" // Enables scrolling if too many contacts
+      {/* Contact details */}
+      <Flex
+        vertical
+        style={{
+          marginLeft: 12,
+          overflow: "hidden",
+          width: "100%",
         }}
       >
-        <ContactCard name="Antony" lastMessage="got the package?" time="15:22" status="read" />
-        <ContactCard name="Elena" lastMessage="See you later!" time="14:05" status="unread" />
-        <ContactCard name="Michael" lastMessage="Meeting at 5?" time="13:48" status="pending" />
-        <ContactCard name="Sophie" lastMessage="Good night!" time="00:15" status="read" />
-      </Flex>
+        <Flex justify="space-between" align="center">
+          <Typography.Text strong style={{ fontSize: 16 }}>
+            {contact.name}
+          </Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            {formattedTime}
+          </Typography.Text>
+        </Flex>
 
-      {/* Button stays at the bottom */}
-      <Button type="primary" block>
-        Add New Chat
-      </Button>
+        <Flex justify="space-between" align="center" style={{ marginTop: 4 }}>
+          <Typography.Text
+            type="secondary"
+            ellipsis={{ tooltip: contact.lastMessage.text }}
+            style={{
+              maxWidth: "80%",
+              fontSize: 14,
+              fontWeight: contact.lastMessage.isRead ? "normal" : "bold",
+            }}
+          >
+            {contact.lastMessage.text}
+          </Typography.Text>
+
+          {!contact.lastMessage.isRead && (
+            <Badge count={1} size="small" style={{ marginLeft: "auto" }} />
+          )}
+        </Flex>
+      </Flex>
     </Flex>
   );
 };
 
-export default ChatList;
+export default ContactCard;
