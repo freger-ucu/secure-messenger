@@ -72,7 +72,7 @@ const ContactCard = ({
         <Flex justify="space-between" align="center" style={{ marginTop: 4 }}>
           <Typography.Text
             type="secondary"
-            ellipsis={{ tooltip: contact.lastMessage.text }}
+            ellipsis={{}}
             style={{
               maxWidth: "80%",
               fontSize: 14,

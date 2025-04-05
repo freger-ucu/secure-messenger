@@ -1,54 +1,22 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Flex, Button, Input } from "antd";
 import ContactCard from "./ContactCard";
 
-const ChatList = () => {
+const ChatList = ({
+  contacts = [],
+  selectedContactId,
+  onSelectContact = () => {},
+}) => {
   // The correct way to access Search in Antd
   const { Search } = Input;
-  const [selectedContactId, setSelectedContactId] = useState(null);
+  const [searchText, setSearchText] = useState("");
 
-  // Sample contacts data
-  const contacts = [
-    {
-      id: "1",
-      name: "John Doe",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      lastMessage: {
-        text: "Hey, are we still meeting tomorrow?",
-        timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-        isRead: false,
-      },
-      isOnline: true,
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      lastMessage: {
-        text: "The project files have been uploaded to the shared folder",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
-        isRead: true,
-      },
-      isOnline: false,
-    },
-    {
-      id: "3",
-      name: "Team Group",
-      avatar: "",
-      lastMessage: {
-        text: "Alice: Let's discuss this at the meeting",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3 hours ago
-        isRead: true,
-      },
-      isOnline: false,
-    },
-  ];
-
-  const handleSelectContact = (contactId) => {
-    setSelectedContactId(contactId);
-    // Here you would also update the parent component or use a state manager
-    // to show the selected conversation in the chat interface
-  };
+  // Filter contacts based on search text
+  const filteredContacts = contacts.filter(
+    (contact) =>
+      contact.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      contact.lastMessage.text.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <Flex
@@ -61,7 +29,12 @@ const ChatList = () => {
         height: "100%", // Ensure it takes full height
       }}
     >
-      <Search placeholder="Search chats..." size="large" />
+      <Search
+        placeholder="Search chats..."
+        size="large"
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+      />
 
       <Button type="primary" block>
         Add New Chat
@@ -77,12 +50,12 @@ const ChatList = () => {
           flex: 1,
         }}
       >
-        {contacts.map((contact) => (
+        {filteredContacts.map((contact) => (
           <ContactCard
             key={contact.id}
             contact={contact}
             isSelected={selectedContactId === contact.id}
-            onSelect={handleSelectContact}
+            onSelect={onSelectContact}
           />
         ))}
       </Flex>
