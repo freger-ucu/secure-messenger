@@ -3,42 +3,34 @@ import ChatNavigation from "./ChatNavigationBar";
 import ChatList from "./ChatList";
 import ChatInterface from "./ChatInterface";
 
-const NAVBAR_HEIGHT = 60;
-
 export default function Chat() {
+  // Calculate navbar height to match what's in ChatNavigation
+  const navbarHeight = "64px"; // Estimate based on padding and content
+
   return (
-    <Flex
-      style={{
-        position: "absolute",
-        top: NAVBAR_HEIGHT,
-        left: 0,
-        width: "100vw",
-        height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-        overflow: "hidden",
-      }}
-    >
-      <ChatNavigation style={{ width: "20%", height: "100%" }} />
-      <Flex style={{ flex: 1, height: "100%" }}>
-        {/* Chat List */}
+    <Flex vertical style={{ height: "100vh", width: "100%" }}>
+      <ChatNavigation />
+      <Flex
+        style={{
+          flex: 1,
+          overflow: "hidden",
+          marginTop: navbarHeight, // Add margin to account for fixed navbar
+        }}
+      >
         <Flex
           style={{
-            width: "20%",
-            height: "100%",
-            backgroundColor: "#f5f5f5",
-            borderRight: "1px solid #ddd",
-            overflowY: "auto",
-            flexShrink: 0,
+            borderRight: "1px solid #f0f0f0",
+            overflow: "auto",
+            paddingTop: "24px", // Add padding to account for navbar
           }}
         >
           <ChatList />
         </Flex>
-
-        {/* Chat Interface */}
         <Flex
           style={{
             flex: 1,
-            height: "100%",
-            minWidth: 0, // Ensures flex doesn't break the layout
+            overflow: "auto",
+            padding: "24px",
           }}
         >
           <ChatInterface />

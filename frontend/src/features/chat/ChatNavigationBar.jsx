@@ -1,5 +1,5 @@
 import { clearTokens } from "../../utilities/auth";
-import { useNavigate } from "react-router"; // Fix import
+import { useNavigate } from "react-router";
 import { Flex, Button, Typography } from "antd";
 
 export default function ChatNavigation() {
@@ -22,7 +22,7 @@ export default function ChatNavigation() {
         padding: "16px 24px",
         borderBottom: "1px solid #ddd",
         background: "#fff",
-        zIndex: 1000, // Ensures it stays on top
+        zIndex: 1000,
       }}
     >
       <Typography.Title level={3} style={{ margin: 0 }}>
