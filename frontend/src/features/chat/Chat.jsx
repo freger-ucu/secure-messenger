@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Flex } from "antd";
 import ChatNavigation from "./ChatNavigationBar";
 import ChatList from "./ChatList";
@@ -7,8 +7,8 @@ import ChatInterface from "./ChatInterface";
 export default function Chat() {
   // Store the currently selected contact ID
   const [selectedContactId, setSelectedContactId] = useState(null);
-
-  const contacts = [
+  // Store contacts with their messages in state
+  const [contacts, setContacts] = useState([
     {
       id: "1",
       name: "John Doe",
@@ -46,9 +46,9 @@ export default function Chat() {
         },
         {
           id: 5,
-          text: "Perfect! Looking forward to seeing it.",
+          text: "Hey, are we still meeting tomorrow?",
           sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 10),
+          timestamp: new Date(Date.now() - 1000 * 60 * 5),
         },
       ],
     },
@@ -59,7 +59,7 @@ export default function Chat() {
       lastMessage: {
         text: "The project files have been uploaded to the shared folder",
         timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
-        isRead: true,
+        isRead: false,
       },
       isOnline: false,
       messages: [
@@ -95,50 +95,7 @@ export default function Chat() {
         },
       ],
     },
-    {
-      id: "3",
-      name: "Team Group",
-      avatar: "",
-      lastMessage: {
-        text: "Alice: Let's discuss this at the meeting",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3 hours ago
-        isRead: true,
-      },
-      isOnline: false,
-      messages: [
-        {
-          id: 1,
-          text: "Bob: Good morning team!",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
-        },
-        {
-          id: 2,
-          text: "Hey everyone!",
-          sender: "user",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4.5),
-        },
-        {
-          id: 3,
-          text: "Alice: I think we should discuss the new feature at our next meeting.",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4),
-        },
-        {
-          id: 4,
-          text: "I agree. When is the meeting scheduled?",
-          sender: "user",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3.5),
-        },
-        {
-          id: 5,
-          text: "Alice: Let's discuss this at the meeting tomorrow at 10 AM.",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
-        },
-      ],
-    },
-  ];
+  ]);
 
   // Find currently selected contact data
   const selectedContact =
@@ -146,19 +103,85 @@ export default function Chat() {
 
   // Function to handle adding a new message to a conversation
   const handleSendMessage = (text) => {
-    // In a real app, this would update state or call an API
-    console.log(`Sending message to ${selectedContact.name}: ${text}`);
+    // Get the highest message ID to ensure unique IDs
+    const getNewMessageId = (messages) => {
+      const highestId = Math.max(...messages.map((msg) => msg.id), 0);
+      return highestId + 1;
+    };
+
+    // Create a new message object
+    const newMessage = {
+      id: getNewMessageId(selectedContact.messages),
+      text: text,
+      sender: "user",
+      timestamp: new Date(),
+    };
+
+    // Update the contacts state with the new message
+    setContacts((prevContacts) => {
+      return prevContacts.map((contact) => {
+        if (contact.id === selectedContact.id) {
+          // Update this contact's messages and lastMessage
+          return {
+            ...contact,
+            messages: [...contact.messages, newMessage],
+            lastMessage: {
+              text: text,
+              timestamp: new Date(),
+              isRead: true,
+            },
+          };
+        }
+        return contact;
+      });
+    });
+  };
+
+  // Function to handle selecting a contact and marking messages as read
+  const handleSelectContact = (contactId) => {
+    setSelectedContactId(contactId);
+
+    // Mark unread messages as read when selecting a contact
+    setContacts((prevContacts) => {
+      return prevContacts.map((contact) => {
+        if (contact.id === contactId && !contact.lastMessage.isRead) {
+          return {
+            ...contact,
+            lastMessage: {
+              ...contact.lastMessage,
+              isRead: true,
+            },
+          };
+        }
+        return contact;
+      });
+    });
   };
 
   // Calculate navbar height to match what's in ChatNavigation
   const navbarHeight = "64px"; // Estimate based on padding and content
 
   // Set first contact as selected by default if none is selected
-  React.useEffect(() => {
+  useEffect(() => {
     if (!selectedContactId && contacts.length > 0) {
       setSelectedContactId(contacts[0].id);
+
+      // Mark the first contact's messages as read if it becomes the default selection
+      if (contacts[0] && !contacts[0].lastMessage.isRead) {
+        setContacts((prevContacts) => {
+          const updatedContacts = [...prevContacts];
+          updatedContacts[0] = {
+            ...updatedContacts[0],
+            lastMessage: {
+              ...updatedContacts[0].lastMessage,
+              isRead: true,
+            },
+          };
+          return updatedContacts;
+        });
+      }
     }
-  }, [selectedContactId]);
+  }, []);
 
   return (
     <Flex vertical style={{ height: "100vh", width: "100%" }}>
@@ -174,13 +197,12 @@ export default function Chat() {
             width: "33%",
             borderRight: "1px solid #f0f0f0",
             overflow: "auto",
-            paddingTop: "16px"
           }}
         >
           <ChatList
             contacts={contacts}
             selectedContactId={selectedContactId}
-            onSelectContact={setSelectedContactId}
+            onSelectContact={handleSelectContact}
           />
         </Flex>
         <Flex
