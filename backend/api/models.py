@@ -53,7 +53,7 @@ class GroupMessage(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.author.username} : {self.body}'
+        return f'{self.author.username} : {self.body}, {self.group}'
 
     class Meta:
         ordering = ['-created']
