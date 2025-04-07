@@ -6,6 +6,13 @@ docker compose -f FILENAME.yml up --build
 ```
 > for development use docker-compose-dev as FILENAME, for production use docker-compose-prod as FILENAME.
 
+### Running dbshell in docker (after running docker-compose)
+```sh
+docker-compose -f docker-compose-dev.yml exec backend bash
+apt-get update && apt-get install -y postgresql-client
+py manage.py dbshell
+````
+
 ## Running the Backend and Frontend separately
 
 You need to run the backend and frontend in separate terminals. Follow the steps below to set up and start both.
