@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ChatGroup, GroupMessage
+from .models import Chat, GroupMessage
 # from api.models import ChatMessage
 
 # class ChatMessageAdmin(admin.ModelAdmin):
@@ -8,5 +8,5 @@ from .models import ChatGroup, GroupMessage
 
 # admin.site.register( ChatMessage,ChatMessageAdmin)
 
-admin.site.register(ChatGroup)
+admin.site.register(Chat)
 admin.site.register(GroupMessage)
