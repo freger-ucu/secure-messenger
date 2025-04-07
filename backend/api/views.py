@@ -24,7 +24,7 @@ from django.http import JsonResponse
 @login_required
 def chat_view(request):
     chat_group = get_object_or_404(Chat, group_name='public_chat')
-    chat_messages = chat_group.chat_messege.all()[:30]
+    chat_messages = chat_group.chat_message.all()[:30]
 
     if request.method == 'POST':
         form = ChatmessegeCreateForm(request.POST)
