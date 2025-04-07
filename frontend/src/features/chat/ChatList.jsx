@@ -7,7 +7,6 @@ const ChatList = ({
   selectedContactId,
   onSelectContact = () => {},
 }) => {
-  // The correct way to access Search in Antd
   const { Search } = Input;
   const [searchText, setSearchText] = useState("");
 

@@ -26,6 +26,17 @@ const ContactCard = ({
     }
   );
 
+  // Determine if the last message was from the contact (not from the user)
+  // We'll assume messages with sender="contact" are from the contact
+  const isLastMessageFromContact =
+    contact.messages &&
+    contact.messages.length > 0 &&
+    contact.messages[contact.messages.length - 1].sender === "contact";
+
+  // Only show unread indicator if the message is from contact and not read
+  const showUnreadIndicator =
+    isLastMessageFromContact && !contact.lastMessage.isRead;
+
   return (
     <Flex
       align="center"
@@ -34,7 +45,9 @@ const ContactCard = ({
         borderRadius: "8px",
         cursor: "pointer",
         width: "100%",
-        backgroundColor: isSelected ? "#e6f7ff" : "white",
+        backgroundColor: isSelected
+          ? "#e6f7ff"
+          : "white",
         marginBottom: "8px",
         border: "1px solid #f0f0f0",
       }}
@@ -61,7 +74,13 @@ const ContactCard = ({
         }}
       >
         <Flex justify="space-between" align="center">
-          <Typography.Text strong style={{ fontSize: 16 }}>
+          <Typography.Text
+            strong={showUnreadIndicator}
+            style={{
+              fontSize: 16,
+              color: showUnreadIndicator ? "#1890ff" : undefined,
+            }}
+          >
             {contact.name}
           </Typography.Text>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
@@ -71,18 +90,18 @@ const ContactCard = ({
 
         <Flex justify="space-between" align="center" style={{ marginTop: 4 }}>
           <Typography.Text
-            type="secondary"
+            type={showUnreadIndicator ? "primary" : "secondary"}
             ellipsis={{}}
             style={{
               maxWidth: "80%",
               fontSize: 14,
-              fontWeight: contact.lastMessage.isRead ? "normal" : "bold",
+              fontWeight: showUnreadIndicator ? "bold" : "normal",
             }}
           >
             {contact.lastMessage.text}
           </Typography.Text>
 
-          {!contact.lastMessage.isRead && (
+          {showUnreadIndicator && (
             <Badge count={1} size="small" style={{ marginLeft: "auto" }} />
           )}
         </Flex>
