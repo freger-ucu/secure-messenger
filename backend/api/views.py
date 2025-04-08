@@ -1,51 +1,41 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from .models import *
-from .forms import ChatmessegeCreateForm
-from django.http import JsonResponse
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from .models import Chat, GroupMessage
+from .serializers import ChatMessageSerializer
 
-# @login_required
-# def chat_view(request):
-#     chat_group = get_object_or_404(Chat, group_name='public_chat')
-#     chat_messages = chat_group.chat_messege.all()[:30]
-#     form = ChatmessegeCreateForm()
+class ChatView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#     if request.method == 'POST':
-#         form = form = ChatmessegeCreateForm(request.POST)
-#         if form.is_valid:
-#             message = form.save(commit=False)
-#             message.author = request.user
-#             message.group = chat_group
-#             message.save()
-#             return redirect('home')
+    def get(self, request):
+        chat_group = get_object_or_404(Chat, group_name='public_chat')
+        chat_messages = chat_group.chat_message.all()[:30]
 
-#     return render(request, 'a_rtchat/chathtml', {chat_messages : 'chat_messeges', form: 'form'})
+        serializer = ChatMessageSerializer(chat_messages, many=True)
+        return Response({
+            'status': 'success',
+            'messages': serializer.data,
+            'group_name': chat_group.group_name
+        })
 
-@login_required
-def chat_view(request):
-    chat_group = get_object_or_404(Chat, group_name='public_chat')
-    chat_messages = chat_group.chat_message.all()[:30]
+    def post(self, request):
+        chat_group = get_object_or_404(Chat, group_name='public_chat')
+        # Додаємо group до даних запиту
+        data = request.data.copy()
+        data['group'] = chat_group.id
 
-    if request.method == 'POST':
-        form = ChatmessegeCreateForm(request.POST)
-        if form.is_valid():
-            message = form.save(commit=False)
-            message.author = request.user
-            message.group = chat_group
-            message.save()
-            return JsonResponse({'status': 'success', 'message': 'Message posted'})
-        return JsonResponse({'status': 'error', 'message': 'Invalid form data'}, status=400)
+        serializer = ChatMessageSerializer(data=data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'status': 'success',
+                'message': serializer.data
+            }, status=status.HTTP_201_CREATED)
 
-    # Prepare messages data for GET request
-    messages_data = [{
-        'id': msg.id,
-        'author': msg.author.username,
-        'content': msg.content,
-        'timestamp': msg.created_at.isoformat()
-    } for msg in chat_messages]
-
-    return JsonResponse({
-        'status': 'success',
-        'messages': messages_data,
-        'group_name': chat_group.group_name
-    })
+        return Response({
+            'status': 'error',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
