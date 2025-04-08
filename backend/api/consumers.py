@@ -1,6 +1,6 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from models import Chat, GroupMessage
+from .models import Chat, GroupMessage
 from channels.db import database_sync_to_async
 
 class ChatroomConsumer(AsyncWebsocketConsumer):
