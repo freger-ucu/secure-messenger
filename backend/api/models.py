@@ -41,6 +41,9 @@ class Chat(models.Model):
         unique_together = ('user1', 'user2')
         verbose_name = "One-to-One Chat"
         verbose_name_plural = "One-to-One Chats"
+        indexes = [
+            models.Index(fields=['user1', 'user2']),
+        ]
 
     def __str__(self):
         return f"Chat between {self.user1.username} and {self.user2.username}"
@@ -49,11 +52,18 @@ class Chat(models.Model):
 class GroupMessage(models.Model):
     group = models.ForeignKey(Chat, related_name='chat_messages', on_delete=models.CASCADE)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    body = models.CharField(max_length=300)
+    body = models.CharField(max_length=1000)
     created = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    is_edited = models.BooleanField(default=False)
+    edited_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.author.username} : {self.body}, {self.group}'
 
     class Meta:
         ordering = ['-created']
+        # indexes = [
+        #     models.Index(fields=['chat', 'created_at']),
+        #     models.Index(fields=['sender']),
+        # ]
