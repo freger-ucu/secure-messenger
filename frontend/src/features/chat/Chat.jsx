@@ -159,7 +159,7 @@ export default function Chat() {
   };
 
   // Calculate navbar height to match what's in ChatNavigation
-  const navbarHeight = "64px"; // Estimate based on padding and content
+  const navbarHeight = "72px"; // Estimate based on padding and content
 
   // Set first contact as selected by default if none is selected
   useEffect(() => {
@@ -197,6 +197,7 @@ export default function Chat() {
             width: "33%",
             borderRight: "1px solid #f0f0f0",
             overflow: "auto",
+            paddingTop: "16px",
           }}
         >
           <ChatList

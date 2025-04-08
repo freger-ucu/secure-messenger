@@ -78,7 +78,7 @@ const ContactCard = ({
             strong={showUnreadIndicator}
             style={{
               fontSize: 16,
-              color: showUnreadIndicator ? "#1890ff" : undefined,
+              
             }}
           >
             {contact.name}

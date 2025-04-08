@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Flex, Button, Input } from "antd";
 import ContactCard from "./ContactCard";
+import AddNewChatModal from "../add-new-chat/AddNewChatModal";
 
 const ChatList = ({
   contacts = [],
@@ -16,6 +17,13 @@ const ChatList = ({
       contact.name.toLowerCase().includes(searchText.toLowerCase()) ||
       contact.lastMessage.text.toLowerCase().includes(searchText.toLowerCase())
   );
+
+  // add new chats
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const showModal = () => setIsModalOpen(true);
+    const handleOk = () => setIsModalOpen(false);
+    const handleCancel = () => setIsModalOpen(false);
 
   return (
     <Flex
@@ -35,7 +43,7 @@ const ChatList = ({
         onChange={(e) => setSearchText(e.target.value)}
       />
 
-      <Button type="primary" block>
+      <Button type="primary" block onClick={showModal}>
         Add New Chat
       </Button>
 
@@ -58,6 +66,9 @@ const ChatList = ({
           />
         ))}
       </Flex>
+
+      {/* Add new chat modal */}
+      <AddNewChatModal isOpen={isModalOpen} onOk={handleOk} onCancel={handleCancel} />
     </Flex>
   );
 };
