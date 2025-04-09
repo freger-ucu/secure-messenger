@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import GroupMessage, Chat
+from .models import GroupMessage, Chat, UserProfile
+from django.contrib.auth.models import User
 
 class ChatMessageSerializer(serializers.ModelSerializer):
     author = serializers.ReadOnlyField(source='author.username')
@@ -26,3 +27,12 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         # Додаємо автора з request.user
         validated_data['author'] = self.context['request'].user
         return super().create(validated_data)
+    
+class UserProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = ['user_id', 'username', 'profile_picture']
+        read_only_fields = ['user_id', 'username']
