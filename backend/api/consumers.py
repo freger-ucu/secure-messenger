@@ -15,7 +15,10 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
-        await self.accept()
+        if self.user.is_authenticated:
+            await self.accept()
+        else:
+            await self.close()
 
     async def disconnect(self, close_code):
         # Leave room group
@@ -25,21 +28,37 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
-        message = data['message']
+        try:
+            if not text_data.strip():
+                raise ValueError("Empty message received")
 
-        # Save to DB
-        await self.save_message(message)
+            data = json.loads(text_data)
+            message = data['message']
 
-        # Broadcast to WebSocket group
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'message': message,
-                'author': self.user.username,
-            }
-        )
+            print("User:", self.user)
+            print("Is Anonymous:", self.user.is_anonymous)
+            print("Message:", message)
+
+            await self.save_message(message)
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': message,
+                    'author': self.user.username,
+                }
+            )
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({
+                'error': 'Invalid JSON format'
+            }))
+        except Exception as e:
+            await self.send(text_data=json.dumps({
+                'error': str(e)
+            }))
+            await self.close()
+
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
@@ -49,7 +68,14 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self, message):
-        chat = Chat.objects.get(id=self.chat_id)
+        try:
+            chat = Chat.objects.get(id=self.chat_id)
+        except Chat.DoesNotExist:
+            raise Exception("Chat does not exist")
+
+        if self.user.is_anonymous:
+            raise Exception("Anonymous users cannot send messages")
+
         GroupMessage.objects.create(
             group=chat,
             author=self.user,
