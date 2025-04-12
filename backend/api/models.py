@@ -38,12 +38,30 @@ class Chat(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user1', 'user2')
+        constraints = [
+            models.UniqueConstraint(fields=['user1', 'user2'], name = 'unique_pair')
+        ]
         verbose_name = "One-to-One Chat"
         verbose_name_plural = "One-to-One Chats"
         indexes = [
             models.Index(fields=['user1', 'user2']),
         ]
+
+
+    def clean(self):
+
+        if self.user1 ==self.user2:
+            raise ValidationError("Same users cannot be in one chat")
+
+
+
+    def save(self, *args, **kwargs):
+
+        self.full_clean()
+
+        if self.user1.id > self.user2.id:
+            self.user1, self.user2 = self.user2, self.user1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Chat between {self.user1.username} and {self.user2.username}"
