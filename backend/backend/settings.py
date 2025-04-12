@@ -115,7 +115,7 @@ DATABASES = {
         'NAME': 'messenger',
         'USER': 'messenger',
         'PASSWORD': 'development',
-        'HOST': 'db',
+        'HOST': 'localhost',
         'PORT': '5432'
     }
 }
