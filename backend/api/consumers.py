@@ -4,21 +4,22 @@ from .models import Chat, GroupMessage
 from channels.db import database_sync_to_async
 
 class ChatroomConsumer(AsyncWebsocketConsumer):
-
     async def connect(self):
         self.user = self.scope['user']
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.room_group_name = f"chat_{self.chat_id}"
+        self.chat = await self.get_chat()
 
-        # Connect to a gropu "chat_id"
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-        if self.user.is_authenticated:
+        if self.user.id in (self.chat.user1_id, self.chat.user2_id):
+            # Connect to the group
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
             await self.accept()
         else:
             await self.close()
+
 
     async def disconnect(self, close_code):
         # Leave room group
@@ -59,12 +60,15 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
             }))
             await self.close()
 
-
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             'message': event['message'],
             'author': event['author'],
         }))
+
+    @database_sync_to_async
+    def get_chat(self):
+        return Chat.objects.get(id=self.chat_id)
 
     @database_sync_to_async
     def save_message(self, message):
