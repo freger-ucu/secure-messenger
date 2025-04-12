@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -56,14 +57,19 @@ class RestoreSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        # Check if seedphrase matches an existing user's seedphrase
-        # If so, update the user's password
+        """
+        Check if account user exists, if so check if the seedphrase matches
+        and update the password
+        """
         try:
-            account = Account.objects.get(seedphrase=validated_data['seedphrase'])
-            if account.user != instance:
-                raise serializers.ValidationError({"seedphrase": "Seedphrase does not match the user."})
+            account = Account.objects.get(user=instance)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({"seedphrase": "Seedphrase does not exist."})
+            raise serializers.ValidationError({"seedphrase": "Account does not exist."})
+
+        if not check_password(validated_data['seedphrase'], account.seedphrase):
+            raise serializers.ValidationError({"seedphrase": "Seedphrase does not match!"})
+
         instance.set_password(validated_data['password'])
         instance.save()
+
         return instance
