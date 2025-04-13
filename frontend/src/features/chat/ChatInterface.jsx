@@ -7,6 +7,7 @@ const { Text } = Typography;
 export default function ChatInterface({ contact, messages, onSendMessage }) {
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef(null);
+  const currentUsername = sessionStorage.getItem("username");
 
   // Format timestamp for display
   const formatTime = (timestamp) => {
@@ -26,7 +27,6 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
   // Handle sending a message
   const handleSend = () => {
     if (messageText.trim() && contact) {
-      // Check if contact exists
       onSendMessage(messageText.trim());
       setMessageText("");
     }
@@ -57,6 +57,21 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
     );
   }
 
+  // Filter out duplicate messages that might be causing the echo
+  const uniqueMessages = messages.reduce((acc, current) => {
+    const duplicate = acc.find(
+      (item) =>
+        item.id === current.id ||
+        (item.text === current.text &&
+          Math.abs(new Date(item.timestamp) - new Date(current.timestamp)) <
+            1000)
+    );
+    if (!duplicate) {
+      acc.push(current);
+    }
+    return acc;
+  }, []);
+
   return (
     <Flex
       vertical
@@ -75,7 +90,14 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
           backgroundColor: "#fff",
         }}
       >
-        <Avatar size={40} src={contact.avatar} style={{ marginRight: 12 }} />
+        <Avatar
+          size={40}
+          style={{ marginRight: 12 }}
+          // Use a fallback if avatar is not available
+          src={contact.avatar}
+        >
+          {contact.name?.charAt(0).toUpperCase()}
+        </Avatar>
         <Flex vertical style={{ flex: 1 }}>
           <Text strong style={{ fontSize: 16 }}>
             {contact.name}
@@ -104,31 +126,54 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
       >
         <List
           itemLayout="horizontal"
-          dataSource={messages}
+          dataSource={uniqueMessages}
           renderItem={(msg) => {
-            const isUser = msg.sender === "user";
+            // Check if the message is from the current user
+            // This is the key change - properly determine if message is from current user
+            const isCurrentUser = msg.sender === currentUsername;
+
             return (
               <List.Item
                 style={{
                   padding: "8px 0",
                   display: "flex",
-                  justifyContent: isUser ? "flex-end" : "flex-start",
+                  justifyContent: isCurrentUser ? "flex-end" : "flex-start",
                 }}
               >
+                {/* Show avatar for other users if available */}
+                {!isCurrentUser && (
+                  <Avatar
+                    size={32}
+                    style={{ marginRight: 8, alignSelf: "flex-end" }}
+                  >
+                    {msg.sender?.charAt(0).toUpperCase()}
+                  </Avatar>
+                )}
+
                 <Flex
                   vertical
                   style={{
                     maxWidth: "70%",
                   }}
                 >
+                  {/* Sender name for messages not from current user */}
+                  {!isCurrentUser && (
+                    <Text
+                      type="secondary"
+                      style={{ fontSize: 12, marginBottom: 4 }}
+                    >
+                      {msg.sender}
+                    </Text>
+                  )}
+
                   <div
                     style={{
                       padding: "10px 16px",
-                      borderRadius: isUser
+                      borderRadius: isCurrentUser
                         ? "18px 18px 0 18px"
                         : "18px 18px 18px 0",
-                      backgroundColor: isUser ? "#1890ff" : "#fff",
-                      color: isUser ? "#fff" : "#000",
+                      backgroundColor: isCurrentUser ? "#1890ff" : "#fff",
+                      color: isCurrentUser ? "#fff" : "#000",
                       boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
                     }}
                   >
@@ -139,7 +184,7 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
                     style={{
                       fontSize: 11,
                       marginTop: 4,
-                      textAlign: isUser ? "right" : "left",
+                      textAlign: isCurrentUser ? "right" : "left",
                     }}
                   >
                     {formatTime(msg.timestamp)}
