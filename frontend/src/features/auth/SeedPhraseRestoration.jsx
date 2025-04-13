@@ -1,17 +1,79 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
-import { Input, Button, Alert } from "antd";
+import { Input, Button, Alert, Form } from "antd";
 const { TextArea } = Input;
 
-export default function SeedPhraseRestoration() {
-  const [seedPhrase, setSeedPhrase] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+// Component for the initial username input screen
+function UsernameEntry({ onSubmit }) {
+  const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!username.trim()) {
+      setError("Username cannot be empty");
+      return;
+    }
+
+    setLoading(true);
+    onSubmit(username);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen px-4">
+      <h2 className="text-3xl font-bold mb-4">Account Recovery</h2>
+      <p className="mb-6 text-center">
+        Enter your username to start the recovery process
+      </p>
+
+      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
+        <div className="mb-4">
+          <label htmlFor="username" className="block text-sm font-medium mb-2">
+            Username
+          </label>
+          <Input
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter your username"
+            className="w-full px-4 py-2 border-2 border-gray-300 rounded-md"
+          />
+        </div>
+
+        {error && (
+          <Alert message={error} type="error" showIcon className="mb-4" />
+        )}
+
+        <Button
+          type="primary"
+          htmlType="submit"
+          size="large"
+          loading={loading}
+          block
+        >
+          Continue
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+export default function SeedPhraseRestoration() {
+  const [username, setUsername] = useState("");
+  const [seedPhrase, setSeedPhrase] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState("username"); // "username" or "restore"
   const navigate = useNavigate();
 
-  // Mock database for existing seed phrase
-  const existingSeedPhrase = "apple banana cherry date elderberry fig";
+  const handleUsernameSubmit = (username) => {
+    setUsername(username);
+    setStep("restore");
+  };
 
   // Handle the form submission
   const handleRestore = async (e) => {
@@ -19,34 +81,93 @@ export default function SeedPhraseRestoration() {
     setLoading(true);
     setError("");
 
-    // Get the seed phrase from the textarea
-    const fullSeedPhrase = seedPhrase.trim();
-
-    // Validate the seed phrase input (must be exactly 6 words)
-    const words = fullSeedPhrase.split(/\s+/);
-    if (words.length !== 6) {
-      setError("Seed phrase must contain exactly 6 words.");
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
 
-    // Simulate checking the seed phrase against the database
-    if (fullSeedPhrase === existingSeedPhrase) {
-      // Proceed with password update and login
-      console.log("Seed phrase matches. Updating password...");
-      // Logic to update password in DB can be implemented here.
+    // Get the seed phrase from the textarea
+    const fullSeedPhrase = seedPhrase.trim();
 
-      // After successful restoration, redirect to the login page
-      navigate("/login");
-    } else {
-      setError("Seed phrase does not match our records.");
+    // Validate the seed phrase input (not empty)
+    if (!fullSeedPhrase) {
+      setError("Seed phrase cannot be empty");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Make API call to the backend with PUT method as required
+      const response = await fetch(
+        `http://127.0.0.1:8000/auth/restore/${username}/`,
+        {
+          method: "PUT", // Changed from POST to PUT based on backend requirements
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: username,
+            password: newPassword,
+            password2: confirmPassword,
+            seedphrase: fullSeedPhrase,
+          }),
+        }
+      );
+
+      // For 204 No Content responses
+      if (response.status === 204) {
+        console.log("Account restored successfully");
+        navigate("/login");
+        return;
+      }
+
+      // For responses with JSON body
+      try {
+        const data = await response.json();
+
+        if (response.ok) {
+          // Success - redirect to login page
+          console.log("Account restored successfully");
+          navigate("/login");
+        } else {
+          // Handle error response from API
+          setError(
+            data.detail ||
+              "Failed to restore account. Please check your seed phrase."
+          );
+          setLoading(false);
+        }
+      } catch (jsonError) {
+        // If the response is not JSON parseable but was successful
+        if (response.ok) {
+          console.log("Account restored successfully");
+          navigate("/login");
+        } else {
+          setError("An error occurred. Please try again.");
+          setLoading(false);
+        }
+      }
+    } catch (err) {
+      console.error("API call failed:", err);
+      setError("Network error. Please try again later.");
       setLoading(false);
     }
   };
 
+  // If we're on the username entry step
+  if (step === "username") {
+    return <UsernameEntry onSubmit={handleUsernameSubmit} />;
+  }
+
+  // If we're on the seed phrase restoration step
   return (
-    <div className="flex flex-col items-center justify-center h-screen px-4">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-8">
       <h2 className="text-3xl font-bold mb-4">Seed Phrase Restoration</h2>
+      <p className="mb-4">
+        Restoring account for: <strong>{username}</strong>
+      </p>
 
       {/* Form for Seed Phrase and New Password */}
       <form onSubmit={handleRestore} className="w-full max-w-xl space-y-6">
@@ -56,18 +177,20 @@ export default function SeedPhraseRestoration() {
             htmlFor="seedPhrase"
             className="block text-sm font-medium mb-2"
           >
-            Enter your 6-word seed phrase
+            Enter your seed phrase
           </label>
           <TextArea
             id="seedPhrase"
             value={seedPhrase}
             onChange={(e) => setSeedPhrase(e.target.value)}
-            placeholder="Enter your seed phrase (6 words separated by spaces)"
+            placeholder="Enter your seed phrase (words separated by spaces)"
             autoSize={{ minRows: 3, maxRows: 5 }}
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-md"
+            required
           />
           <p className="mt-1 text-sm text-gray-500">
-            Please enter all 6 words of your seed phrase, separated by spaces.
+            Please enter your seed phrase exactly as it was provided to you,
+            with words separated by spaces.
           </p>
         </div>
 
@@ -86,6 +209,26 @@ export default function SeedPhraseRestoration() {
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Enter new password"
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-md"
+            required
+          />
+        </div>
+
+        {/* Confirm Password Input */}
+        <div className="mb-4">
+          <label
+            htmlFor="confirmPassword"
+            className="block text-sm font-medium mb-2"
+          >
+            Confirm Password
+          </label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm new password"
+            className="w-full px-4 py-2 border-2 border-gray-300 rounded-md"
+            required
           />
         </div>
 
@@ -104,6 +247,14 @@ export default function SeedPhraseRestoration() {
             block
           >
             Restore Account
+          </Button>
+
+          <Button
+            type="default"
+            onClick={() => setStep("username")}
+            size="large"
+          >
+            Back to Username Entry
           </Button>
 
           <Button type="link" onClick={() => navigate("/login")} size="large">
