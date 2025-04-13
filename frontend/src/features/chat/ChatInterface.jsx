@@ -1,51 +1,58 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Flex, Input, Button, Typography, Avatar } from "antd";
+import { useState, useRef, useEffect } from "react";
+import { Input, Button, List, Avatar, Typography, Badge, Flex } from "antd";
 import { SendOutlined } from "@ant-design/icons";
 
-const ChatInterface = ({
-  contact = {
-    id: "",
-    name: "",
-    avatar: "",
-    isOnline: false,
-  },
-  messages = [],
-  onSendMessage = () => {},
-  currentUserAvatar = "https://i.pravatar.cc/150?img=8",
-}) => {
-  const [newMessage, setNewMessage] = useState("");
+const { Text } = Typography;
+
+export default function ChatInterface({ contact, messages, onSendMessage }) {
+  const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to the bottom when messages change or contact changes
+  // Format timestamp for display
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Scroll to bottom of messages when messages change
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, contact.id]);
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Handle sending a message
+  const handleSend = () => {
+    if (messageText.trim() && contact) {
+      // Check if contact exists
+      onSendMessage(messageText.trim());
+      setMessageText("");
+    }
   };
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() === "") return;
-
-    onSendMessage(newMessage);
-    setNewMessage("");
+  // Handle pressing Enter to send
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
-  const formatTime = (date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
-  if (!contact.id) {
+  // If no contact is selected, display a placeholder
+  if (!contact) {
     return (
       <Flex
         justify="center"
         align="center"
-        style={{ width: "100%", height: "100%" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#f5f5f5",
+        }}
       >
-        <Typography.Text type="secondary">
-          Select a conversation to start chatting
-        </Typography.Text>
+        <Text type="secondary">Select a conversation to start chatting</Text>
       </Flex>
     );
   }
@@ -56,134 +63,117 @@ const ChatInterface = ({
       style={{
         width: "100%",
         height: "100%",
+        position: "relative",
       }}
     >
       {/* Chat header */}
       <Flex
         align="center"
         style={{
-          padding: "12px 16px",
+          padding: "16px 24px",
           borderBottom: "1px solid #f0f0f0",
-          backgroundColor: "white",
-          width: "100%",
+          backgroundColor: "#fff",
         }}
       >
-        <Avatar src={contact.avatar} size={40}>
-          {!contact.avatar && contact.name.charAt(0).toUpperCase()}
-        </Avatar>
-        <Flex vertical style={{ margin: "0 0 0 12px" }}>
-          <Typography.Title level={4} style={{ margin: 0 }}>
+        <Avatar size={40} src={contact.avatar} style={{ marginRight: 12 }} />
+        <Flex vertical style={{ flex: 1 }}>
+          <Text strong style={{ fontSize: 16 }}>
             {contact.name}
-          </Typography.Title>
-          <Typography.Text type="secondary" style={{ fontSize: "12px" }}>
-            {contact.isOnline ? "Online" : "Offline"}
-          </Typography.Text>
+          </Text>
+          <Flex align="center">
+            <Badge
+              status={contact.isOnline ? "success" : "default"}
+              style={{ marginRight: 8 }}
+            />
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {contact.isOnline ? "Online" : "Offline"}
+            </Text>
+          </Flex>
         </Flex>
       </Flex>
 
-      {/* Messages container */}
+      {/* Messages area */}
       <Flex
         vertical
         style={{
           flex: 1,
-          overflow: "auto",
-          padding: "16px",
-          width: "100%",
+          padding: "16px 24px",
+          overflowY: "auto",
+          backgroundColor: "#f5f5f5",
         }}
       >
-        {messages.map((msg) => (
-          <Flex
-            key={msg.id}
-            style={{
-              marginBottom: "16px",
-              width: "100%",
-              justifyContent: msg.sender === "user" ? "flex-end" : "flex-start",
-            }}
-          >
-            {msg.sender === "contact" && (
-              <Avatar
-                src={contact.avatar}
-                size={32}
-                style={{ marginRight: "8px", alignSelf: "flex-end" }}
-              >
-                {!contact.avatar && contact.name.charAt(0).toUpperCase()}
-              </Avatar>
-            )}
-
-            <Flex
-              vertical
-              style={{
-                maxWidth: "70%",
-                backgroundColor: msg.sender === "user" ? "#1890ff" : "white",
-                color: msg.sender === "user" ? "white" : "rgba(0, 0, 0, 0.85)",
-                borderRadius: "12px",
-                padding: "10px 16px",
-                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              <Typography.Text
+        <List
+          itemLayout="horizontal"
+          dataSource={messages}
+          renderItem={(msg) => {
+            const isUser = msg.sender === "user";
+            return (
+              <List.Item
                 style={{
-                  color:
-                    msg.sender === "user" ? "white" : "rgba(0, 0, 0, 0.85)",
-                  wordBreak: "break-word",
+                  padding: "8px 0",
+                  display: "flex",
+                  justifyContent: isUser ? "flex-end" : "flex-start",
                 }}
               >
-                {msg.text}
-              </Typography.Text>
-              <Typography.Text
-                type="secondary"
-                style={{
-                  fontSize: "12px",
-                  marginTop: "4px",
-                  textAlign: msg.sender === "user" ? "right" : "left",
-                  color:
-                    msg.sender === "user"
-                      ? "rgba(255, 255, 255, 0.75)"
-                      : "rgba(0, 0, 0, 0.45)",
-                }}
-              >
-                {formatTime(msg.timestamp)}
-              </Typography.Text>
-            </Flex>
-
-            {msg.sender === "user" && (
-              <Avatar
-                src={currentUserAvatar}
-                size={32}
-                style={{ marginLeft: "8px", alignSelf: "flex-end" }}
-              />
-            )}
-          </Flex>
-        ))}
+                <Flex
+                  vertical
+                  style={{
+                    maxWidth: "70%",
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: isUser
+                        ? "18px 18px 0 18px"
+                        : "18px 18px 18px 0",
+                      backgroundColor: isUser ? "#1890ff" : "#fff",
+                      color: isUser ? "#fff" : "#000",
+                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    {msg.text}
+                  </div>
+                  <Text
+                    type="secondary"
+                    style={{
+                      fontSize: 11,
+                      marginTop: 4,
+                      textAlign: isUser ? "right" : "left",
+                    }}
+                  >
+                    {formatTime(msg.timestamp)}
+                  </Text>
+                </Flex>
+              </List.Item>
+            );
+          }}
+        />
         <div ref={messagesEndRef} />
       </Flex>
 
-      {/* Message input */}
+      {/* Message input area */}
       <Flex
         style={{
-          backgroundColor: "white",
-          padding: "12px 16px",
+          padding: "16px 24px",
           borderTop: "1px solid #f0f0f0",
-          width: "100%",
+          backgroundColor: "#fff",
         }}
       >
         <Input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onPressEnter={handleSendMessage}
           placeholder="Type a message..."
-          size="large"
-          style={{ flex: 1 }}
+          value={messageText}
+          onChange={(e) => setMessageText(e.target.value)}
+          onKeyPress={handleKeyPress}
+          style={{ flex: 1, marginRight: 16 }}
         />
         <Button
           type="primary"
           icon={<SendOutlined />}
-          onClick={handleSendMessage}
-          style={{ marginLeft: "8px" }}
+          onClick={handleSend}
+          disabled={!messageText.trim()}
         />
       </Flex>
     </Flex>
   );
-};
-
-export default ChatInterface;
+}

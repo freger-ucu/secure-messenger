@@ -1,149 +1,140 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Flex } from "antd";
 import ChatNavigation from "./ChatNavigationBar";
 import ChatList from "./ChatList";
 import ChatInterface from "./ChatInterface";
 
 export default function Chat() {
-  // Store the currently selected contact ID
-  const [selectedContactId, setSelectedContactId] = useState(null);
-  // Store contacts with their messages in state
+  const [selectedContactId, setSelectedContactId] = useState(1); // Always show chat with id 1
   const [contacts, setContacts] = useState([
     {
-      id: "1",
-      name: "John Doe",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      lastMessage: {
-        text: "Hey, are we still meeting tomorrow?",
-        timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-        isRead: false,
-      },
-      isOnline: true,
-      messages: [
-        {
-          id: 1,
-          text: "Hey there! How's it going?",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 30),
-        },
-        {
-          id: 2,
-          text: "I'm doing well, thanks for asking! Just working on that project we discussed.",
-          sender: "user",
-          timestamp: new Date(Date.now() - 1000 * 60 * 25),
-        },
-        {
-          id: 3,
-          text: "That's great to hear. How's the progress?",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 20),
-        },
-        {
-          id: 4,
-          text: "Making good headway. I should have the first draft ready by tomorrow.",
-          sender: "user",
-          timestamp: new Date(Date.now() - 1000 * 60 * 15),
-        },
-        {
-          id: 5,
-          text: "Hey, are we still meeting tomorrow?",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 5),
-        },
-      ],
+      id: 1,
+      name: "uname1",
+      lastMessage: { text: "Hello!", timestamp: new Date(), isRead: true },
+      messages: [],
     },
     {
-      id: "2",
-      name: "Jane Smith",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      lastMessage: {
-        text: "The project files have been uploaded to the shared folder",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
-        isRead: false,
-      },
-      isOnline: false,
-      messages: [
-        {
-          id: 1,
-          text: "Hi! I've uploaded the project files to the shared folder.",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 65),
-        },
-        {
-          id: 2,
-          text: "Thanks Jane! I'll take a look at them soon.",
-          sender: "user",
-          timestamp: new Date(Date.now() - 1000 * 60 * 63),
-        },
-        {
-          id: 3,
-          text: "Let me know if you need any clarification on the requirements.",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 62),
-        },
-        {
-          id: 4,
-          text: "Will do. Are there any specific areas I should focus on first?",
-          sender: "user",
-          timestamp: new Date(Date.now() - 1000 * 60 * 61),
-        },
-        {
-          id: 5,
-          text: "The project files have been uploaded to the shared folder.",
-          sender: "contact",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60),
-        },
-      ],
+      id: 2,
+      name: "uname2",
+      lastMessage: { text: "Hi!", timestamp: new Date(), isRead: false },
+      messages: [],
     },
   ]);
 
-  // Find currently selected contact data
   const selectedContact =
-    contacts.find((contact) => contact.id === selectedContactId) || contacts[0];
+    contacts.find((contact) => contact.id === selectedContactId) || null;
 
-  // Function to handle adding a new message to a conversation
-  const handleSendMessage = (text) => {
-    // Get the highest message ID to ensure unique IDs
-    const getNewMessageId = (messages) => {
-      const highestId = Math.max(...messages.map((msg) => msg.id), 0);
-      return highestId + 1;
+  const wsRef = useRef(null);
+  const accessToken = sessionStorage.getItem("accessToken");
+  const currentUsername = "uname1"; // This should come from your auth system
+
+  // Connect to WebSocket chatroom 1, with the accessToken from sessionStorage
+  useEffect(() => {
+    if (!accessToken) {
+      console.error("❌ No access token found in sessionStorage!");
+      return;
+    }
+
+    const ws = new WebSocket(
+      `ws://127.0.0.1:8000/ws/chatroom/1/?token=${accessToken}`
+    );
+
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("🔥 Connected to WebSocket Chatroom #1");
     };
 
-    // Create a new message object
+    // Handle incoming messages (broadcasted by others)
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      // Ignore messages sent by the current user (they're already shown locally)
+      if (data.sender === currentUsername) return;
+
+      const receivedMessage = {
+        id: Date.now(),
+        text: data.message,
+        sender: data.sender,
+        timestamp: new Date(),
+      };
+
+      // Update both contacts with the received message
+      setContacts((prevContacts) =>
+        prevContacts.map((contact) => ({
+          ...contact,
+          messages: [...contact.messages, receivedMessage],
+          lastMessage: {
+            text: receivedMessage.text,
+            timestamp: new Date(),
+            isRead: contact.id === selectedContactId,
+          },
+        }))
+      );
+    };
+
+    ws.onerror = (err) => {
+      console.error("💀 WebSocket error:", err);
+    };
+
+    ws.onclose = () => {
+      console.warn("🪦 WebSocket connection closed");
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [accessToken, selectedContactId, currentUsername]);
+
+  // Function to send messages
+  const handleSendMessage = (text) => {
+    if (!text.trim() || !selectedContact) return;
+
     const newMessage = {
-      id: getNewMessageId(selectedContact.messages),
+      id: Date.now(),
       text: text,
-      sender: "user",
+      sender: currentUsername,
       timestamp: new Date(),
     };
 
-    // Update the contacts state with the new message
-    setContacts((prevContacts) => {
-      return prevContacts.map((contact) => {
-        if (contact.id === selectedContact.id) {
-          // Update this contact's messages and lastMessage
-          return {
-            ...contact,
-            messages: [...contact.messages, newMessage],
-            lastMessage: {
-              text: text,
-              timestamp: new Date(),
-              isRead: true,
-            },
-          };
-        }
-        return contact;
-      });
-    });
+    // If the message is from the current user, we don’t need to echo it back
+    setContacts((prevContacts) =>
+      prevContacts.map((contact) => {
+        const isUserMessage = contact.name === currentUsername;
+        const updatedMessages = isUserMessage
+          ? [...contact.messages, newMessage]
+          : contact.messages;
+
+        return {
+          ...contact,
+          messages: updatedMessages,
+          lastMessage: {
+            text: text,
+            timestamp: new Date(),
+            isRead: contact.id === selectedContactId,
+          },
+        };
+      })
+    );
+
+    // Send the message to WebSocket
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          message: text,
+          sender: currentUsername,
+        })
+      );
+    }
   };
 
-  // Function to handle selecting a contact and marking messages as read
+  // Function to select a contact
   const handleSelectContact = (contactId) => {
     setSelectedContactId(contactId);
 
-    // Mark unread messages as read when selecting a contact
-    setContacts((prevContacts) => {
-      return prevContacts.map((contact) => {
+    // Mark messages as read when selecting a contact
+    setContacts((prevContacts) =>
+      prevContacts.map((contact) => {
         if (contact.id === contactId && !contact.lastMessage.isRead) {
           return {
             ...contact,
@@ -154,34 +145,11 @@ export default function Chat() {
           };
         }
         return contact;
-      });
-    });
+      })
+    );
   };
 
-  // Calculate navbar height to match what's in ChatNavigation
-  const navbarHeight = "64px"; // Estimate based on padding and content
-
-  // Set first contact as selected by default if none is selected
-  useEffect(() => {
-    if (!selectedContactId && contacts.length > 0) {
-      setSelectedContactId(contacts[0].id);
-
-      // Mark the first contact's messages as read if it becomes the default selection
-      if (contacts[0] && !contacts[0].lastMessage.isRead) {
-        setContacts((prevContacts) => {
-          const updatedContacts = [...prevContacts];
-          updatedContacts[0] = {
-            ...updatedContacts[0],
-            lastMessage: {
-              ...updatedContacts[0].lastMessage,
-              isRead: true,
-            },
-          };
-          return updatedContacts;
-        });
-      }
-    }
-  }, []);
+  const navbarHeight = "64px";
 
   return (
     <Flex vertical style={{ height: "100vh", width: "100%" }}>
@@ -189,7 +157,7 @@ export default function Chat() {
       <Flex
         style={{
           flex: 1,
-          marginTop: navbarHeight, // Add margin to account for fixed navbar
+          marginTop: navbarHeight,
         }}
       >
         <Flex
