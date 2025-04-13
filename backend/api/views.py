@@ -40,6 +40,46 @@ class ChatView(APIView):
         })
 
 
+class ChatHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, chat_id):
+        # Get the authenticated user
+        user = request.user
+        
+        try:
+            # Get the chat and ensure the user is a participant
+            chat = Chat.objects.get(id=chat_id)
+            if user != chat.user1 and user != chat.user2:
+                return Response({
+                    'status': 'error',
+                    'message': 'You are not a participant in this chat'
+                }, status=status.HTTP_403_FORBIDDEN)
+                
+            # Get all messages for this chat
+            messages = chat.chat_messages.all().order_by('created')
+            message_data = ChatMessageSerializer(messages, many=True).data
+            
+            # Get the other user
+            other_user = chat.user2 if chat.user1 == user else chat.user1
+            
+            return Response({
+                'status': 'success',
+                'chat_id': chat.id,
+                'user1': chat.user1.username,
+                'user2': chat.user2.username,
+                'other_user': other_user.username,
+                'created_at': chat.created_at,
+                'messages': message_data
+            })
+            
+        except Chat.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'message': 'Chat not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
 class CreateChatView(APIView):
     permission_classes = [IsAuthenticated]
     
