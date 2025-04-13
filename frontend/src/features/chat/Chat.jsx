@@ -126,7 +126,7 @@ export default function Chat() {
         };
 
         setContacts((prevContacts) => [...prevContacts, newChat]);
-        setSelectedContactId(data.chat_id);
+        setSelectedContactId(data.chat.id);
         setModalVisible(false);
         addChatForm.resetFields();
       } else {
@@ -148,7 +148,7 @@ export default function Chat() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/chat/${chatId}/messages/`,
+        `http://127.0.0.1:8000/api/chat/${chatId}/history/`,
         {
           method: "GET",
           headers: {
@@ -173,7 +173,7 @@ export default function Chat() {
                 messages: data.messages.map((msg) => ({
                   id: msg.id,
                   text: msg.body,
-                  sender: msg.sender,
+                  sender: msg.author, // Changed from sender to author
                   timestamp: new Date(msg.timestamp),
                 })),
               };
@@ -328,12 +328,16 @@ export default function Chat() {
   const navbarHeight = "64px";
 
   return (
-    <Flex vertical style={{ height: "100vh", width: "100%" }}>
+    <Flex
+      vertical
+      style={{ height: "100vh", width: "100%", overflow: "hidden" }}
+    >
       <ChatNavigation />
       <Flex
         style={{
           flex: 1,
           marginTop: navbarHeight,
+          overflow: "hidden", // Add this to prevent scrolling of the entire layout
         }}
       >
         <Flex
@@ -341,7 +345,7 @@ export default function Chat() {
           style={{
             width: "33%",
             borderRight: "1px solid #f0f0f0",
-            overflow: "auto",
+            overflow: "auto", // Chat list can still scroll
           }}
         >
           <Flex
@@ -372,6 +376,7 @@ export default function Chat() {
           style={{
             flex: 1,
             width: "75%",
+            overflow: "hidden", // Add this to ensure chat interface container doesn't scroll
           }}
         >
           {selectedContact ? (

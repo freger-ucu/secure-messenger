@@ -79,6 +79,7 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
         width: "100%",
         height: "100%",
         position: "relative",
+        overflow: "hidden", // Prevent the entire ChatInterface from scrolling
       }}
     >
       {/* Chat header */}
@@ -114,22 +115,26 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
         </Flex>
       </Flex>
 
-      {/* Messages area */}
+      {/* Messages area - this is where we want the scrolling to happen */}
       <Flex
         vertical
         style={{
           flex: 1,
           padding: "16px 24px",
-          overflowY: "auto",
+          overflowY: "auto", // Only this section should scroll
           backgroundColor: "#f5f5f5",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <List
           itemLayout="horizontal"
           dataSource={uniqueMessages}
+          style={{
+            width: "100%",
+          }}
           renderItem={(msg) => {
             // Check if the message is from the current user
-            // This is the key change - properly determine if message is from current user
             const isCurrentUser = msg.sender === currentUsername;
 
             return (
