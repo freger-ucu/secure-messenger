@@ -36,3 +36,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['user_id', 'username', 'profile_picture']
         read_only_fields = ['user_id', 'username']
+
+class UsernameUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username']
+        extra_kwargs = {
+            'username': {'required': True},
+        }
+
+    def validate_username(self, value):
+        """
+        Перевіряємо, чи username унікальний, виключаючи поточного користувача.
+        """
+        if User.objects.exclude(id=self.instance.id).filter(username=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value

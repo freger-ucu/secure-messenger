@@ -50,5 +50,5 @@ class GroupMessage(models.Model):
         ordering = ['-created']
         indexes = [
             models.Index(fields=['chat', 'created_at']),
-            models.Index(fields=['sender']),
+            models.Index(fields=['author']),
         ]

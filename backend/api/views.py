@@ -4,17 +4,15 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import Chat, GroupMessage, UserProfile, User
-from .serializers import ChatMessageSerializer, UserProfileSerializer
+from .serializers import ChatMessageSerializer, UserProfileSerializer, UsernameUpdateSerializer
 
 class SetProfilePictureView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Отримуємо user_id або username із запиту
         user_id = request.data.get('userId')
         username = request.data.get('username')
 
-        # Перевіряємо, чи користувач змінює свій профіль
         if (user_id and user_id != str(request.user.id)) or \
            (username and username != request.user.username):
             return Response({
@@ -22,10 +20,8 @@ class SetProfilePictureView(APIView):
                 'message': 'You can only update your own profile picture'
             }, status=status.HTTP_403_FORBIDDEN)
 
-        # Отримуємо або створюємо профіль користувача
         profile, created = UserProfile.objects.get_or_create(user=request.user)
 
-        # Оновлюємо картинку, якщо вона є в запиті
         serializer = UserProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -40,7 +36,6 @@ class SetProfilePictureView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        # Дозволяємо отримати профіль за userId або username
         user_id = request.query_params.get('userId')
         username = request.query_params.get('username')
 
@@ -49,7 +44,7 @@ class SetProfilePictureView(APIView):
         elif username:
             user = get_object_or_404(User, username=username)
         else:
-            user = request.user  # За замовчуванням повертаємо профіль поточного користувача
+            user = request.user
 
         profile, created = UserProfile.objects.get_or_create(user=user)
         serializer = UserProfileSerializer(profile)
@@ -57,6 +52,7 @@ class SetProfilePictureView(APIView):
             'status': 'success',
             'data': serializer.data
         })
+
 
 class ChatView(APIView):
     permission_classes = [IsAuthenticated]
@@ -90,3 +86,31 @@ class ChatView(APIView):
             'status': 'error',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SetUsernameView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = UsernameUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'status': 'success',
+                'data': {
+                    'username': serializer.instance.username
+                }
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            'status': 'error',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        return Response({
+            'status': 'success',
+            'data': {
+                'username': request.user.username
+            }
+        }, status=status.HTTP_200_OK)
