@@ -1,65 +1,75 @@
-import React, { useState } from "react";
-import { Flex, Button, Input } from "antd";
-import ContactCard from "./ContactCard";
+import { List, Badge, Spin } from "antd";
 
-const ChatList = ({
-  contacts = [],
+export default function ChatList({
+  contacts,
   selectedContactId,
-  onSelectContact = () => {},
-}) => {
-  const { Search } = Input;
-  const [searchText, setSearchText] = useState("");
+  onSelectContact,
+  loading,
+}) {
+  if (loading) {
+    return (
+      <div style={{ padding: "20px", textAlign: "center", width: "100%" }}>
+        <Spin tip="Loading chats..." />
+      </div>
+    );
+  }
 
-  // Filter contacts based on search text
-  const filteredContacts = contacts.filter(
-    (contact) =>
-      contact.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      contact.lastMessage.text.toLowerCase().includes(searchText.toLowerCase())
-  );
+  if (contacts.length === 0) {
+    return (
+      <div style={{ padding: "20px", textAlign: "center", width: "100%" }}>
+        No chats available
+      </div>
+    );
+  }
 
   return (
-    <Flex
-      align="start"
-      vertical
-      gap="small"
-      style={{
-        width: "100%",
-        padding: "0 24px",
-        height: "100%", // Ensure it takes full height
-      }}
-    >
-      <Search
-        placeholder="Search chats..."
-        size="large"
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
-      />
-
-      <Button type="primary" block>
-        Add New Chat
-      </Button>
-
-      {/* Contact cards section */}
-      <Flex
-        vertical
-        style={{
-          width: "100%",
-          marginTop: "16px",
-          overflow: "auto",
-          flex: 1,
-        }}
-      >
-        {filteredContacts.map((contact) => (
-          <ContactCard
-            key={contact.id}
-            contact={contact}
-            isSelected={selectedContactId === contact.id}
-            onSelect={onSelectContact}
+    <List
+      style={{ width: "100%" }}
+      itemLayout="horizontal"
+      dataSource={contacts}
+      renderItem={(contact) => (
+        <List.Item
+          onClick={() => onSelectContact(contact.id)}
+          style={{
+            padding: "12px 24px",
+            cursor: "pointer",
+            backgroundColor:
+              contact.id === selectedContactId ? "#f0f0f0" : "transparent",
+          }}
+        >
+          <List.Item.Meta
+            title={
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>{contact.name}</span>
+                <span style={{ fontSize: "12px", color: "#888" }}>
+                  {contact.lastMessage?.timestamp
+                    ? new Date(
+                        contact.lastMessage.timestamp
+                      ).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : ""}
+                </span>
+              </div>
+            }
+            description={
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>
+                  {contact.lastMessage?.text
+                    ? contact.lastMessage.text.length > 30
+                      ? contact.lastMessage.text.substring(0, 30) + "..."
+                      : contact.lastMessage.text
+                    : "No messages yet"}
+                </span>
+                {contact.lastMessage && !contact.lastMessage.isRead && (
+                  <Badge count={1} style={{ marginLeft: "8px" }} />
+                )}
+              </div>
+            }
           />
-        ))}
-      </Flex>
-    </Flex>
+        </List.Item>
+      )}
+    />
   );
-};
-
-export default ChatList;
+}

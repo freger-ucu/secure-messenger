@@ -51,6 +51,9 @@ export default function LoginPage() {
       sessionStorage.setItem("accessToken", result.access);
       sessionStorage.setItem("refreshToken", result.refresh);
 
+      // Username as well
+      sessionStorage.setItem("username", data.username);
+
       message.success("Login successful!");
 
       // Redirect user to the chat page

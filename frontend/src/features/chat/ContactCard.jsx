@@ -17,25 +17,23 @@ const ContactCard = ({
   isSelected = false,
   onSelect = () => {},
 }) => {
-  // Format the timestamp to relative time (e.g., "5 min ago")
-  const formattedTime = formatDistanceToNow(
-    new Date(contact.lastMessage.timestamp),
-    {
-      addSuffix: true,
-      includeSeconds: true,
-    }
-  );
+  // Safely access contact.lastMessage.timestamp
+  const lastMessage = contact.lastMessage || {};
+  const formattedTime = lastMessage.timestamp
+    ? formatDistanceToNow(new Date(lastMessage.timestamp), {
+        addSuffix: true,
+        includeSeconds: true,
+      })
+    : ""; // Default to empty string if timestamp is unavailable
 
   // Determine if the last message was from the contact (not from the user)
-  // We'll assume messages with sender="contact" are from the contact
   const isLastMessageFromContact =
     contact.messages &&
     contact.messages.length > 0 &&
     contact.messages[contact.messages.length - 1].sender === "contact";
 
   // Only show unread indicator if the message is from contact and not read
-  const showUnreadIndicator =
-    isLastMessageFromContact && !contact.lastMessage.isRead;
+  const showUnreadIndicator = isLastMessageFromContact && !lastMessage.isRead;
 
   return (
     <Flex
@@ -45,9 +43,7 @@ const ContactCard = ({
         borderRadius: "8px",
         cursor: "pointer",
         width: "100%",
-        backgroundColor: isSelected
-          ? "#e6f7ff"
-          : "white",
+        backgroundColor: isSelected ? "#e6f7ff" : "white",
         marginBottom: "8px",
         border: "1px solid #f0f0f0",
       }}
@@ -98,7 +94,7 @@ const ContactCard = ({
               fontWeight: showUnreadIndicator ? "bold" : "normal",
             }}
           >
-            {contact.lastMessage.text}
+            {lastMessage.text}
           </Typography.Text>
 
           {showUnreadIndicator && (
