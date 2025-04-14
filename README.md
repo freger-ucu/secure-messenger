@@ -31,7 +31,7 @@ python3 manage.py migrate
 
 #### Running server
 ```sh
-python3 manage.py runserver
+daphne backend.asgi:application
 ```
 
 ### Frontend (React):
