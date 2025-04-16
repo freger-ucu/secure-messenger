@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 class ChatMessageSerializer(serializers.ModelSerializer):
     author = serializers.ReadOnlyField(source='author.username')
     timestamp = serializers.DateTimeField(source='created_at', read_only=True)
+    body = serializers.CharField()
 
     class Meta:
         model = GroupMessage
@@ -13,7 +14,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'group': {'write_only': True},
             'body': {
-                'max_length': 300,
+                'max_length': 1000,
                 'style': {
                     'input_type': 'text',
                     'placeholder': 'Add message',
@@ -24,9 +25,22 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # Додаємо автора з request.user
-        validated_data['author'] = self.context['request'].user
-        return super().create(validated_data)
+        plaintext_body = validated_data.pop('body')
+        group = validated_data['group']
+        if not group.encryption_key:
+            raise serializers.ValidationError("Chat has no encryption key.")
+
+        message = GroupMessage(**validated_data)
+        message.author = self.context['request'].user
+        message.set_body(plaintext_body, group.encryption_key)
+        message.save()
+        return message
+
+    def to_representation(self, instance):
+        """Розшифровуємо body при серіалізації."""
+        representation = super().to_representation(instance)
+        representation['body'] = instance.get_body()
+        return representation
     
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
