@@ -7,11 +7,12 @@ export function useContacts(selectedContactId, setSelectedContactId) {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const accessToken = sessionStorage.getItem("accessToken");
   const REFRESH_INTERVAL = 5000; // 5 seconds
 
-  const fetchContacts = async () => {
+  const fetchContacts = async (isInitialLoad = false) => {
     if (!accessToken) return;
 
     try {
@@ -44,9 +45,9 @@ export function useContacts(selectedContactId, setSelectedContactId) {
           }));
         });
 
-        // Select first contact if none selected
-        if (formattedContacts.length > 0 && !selectedContactId) {
-          setSelectedContactId(formattedContacts[0].id);
+        // Handle initial contact selection in a separate effect
+        if (isInitialLoad) {
+          setInitialLoadComplete(true);
         }
       }
     } catch (err) {
@@ -62,7 +63,7 @@ export function useContacts(selectedContactId, setSelectedContactId) {
     const initialize = async () => {
       try {
         setLoading(true);
-        await fetchContacts();
+        await fetchContacts(true); // Mark this as initial load
       } catch (err) {
         console.error("Error initializing chats:", err);
         message.error("Failed to load chats. Please try again later.");
@@ -74,10 +75,20 @@ export function useContacts(selectedContactId, setSelectedContactId) {
 
     initialize();
 
-    // Set up periodic refresh
-    const intervalId = setInterval(fetchContacts, REFRESH_INTERVAL);
+    // Set up periodic refresh with regular fetchContacts (not initial)
+    const intervalId = setInterval(
+      () => fetchContacts(false),
+      REFRESH_INTERVAL
+    );
     return () => clearInterval(intervalId);
   }, [accessToken]);
+
+  // Handle initial contact selection separately
+  useEffect(() => {
+    if (initialLoadComplete && contacts.length > 0 && !selectedContactId) {
+      setSelectedContactId(contacts[0].id);
+    }
+  }, [initialLoadComplete, contacts, selectedContactId, setSelectedContactId]);
 
   return { contacts, setContacts, loading, error, fetchContacts };
 }
