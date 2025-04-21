@@ -25,14 +25,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/restore" element={<SeedPhraseRestoration />} />
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*" element={<LoginPage />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <App />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<App />}/>
       </Routes>
     </Router>
   </ConfigProvider>

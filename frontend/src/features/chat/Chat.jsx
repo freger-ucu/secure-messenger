@@ -1,6 +1,5 @@
-// src/components/Chat/index.jsx
 import { useState, useEffect } from "react";
-import { Flex, message, Button, Modal, Input, Form, theme } from "antd";
+import { Flex, message, Button, FloatButton, Modal, Input, Form, theme } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import ChatNavigation from "./ChatNavigationBar";
 import ChatList from "./ChatList";
@@ -9,13 +8,22 @@ import { useContacts } from "./hooks/useContacts";
 import { useChatMessages } from "./hooks/useChatMessages";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { useAddChat } from "./hooks/useAddChat";
+import { useAuthToken } from "./hooks/useAuthToken";
+import { withAuthProtection } from "../auth/withAuthProtection";
 
-export default function Chat() {
+function Chat() {
+  // Responsive detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [sidebarVisible, setSidebarVisible] = useState(!isMobile);
+
   // State management
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [addChatForm] = Form.useForm();
   const { token } = theme.useToken();
+
+  // Auth hook to handle token refresh
+  const { accessToken, tokenError } = useAuthToken();
 
   // Custom hooks
   const {
@@ -44,6 +52,9 @@ export default function Chat() {
   // UI interaction handlers
   const handleSelectContact = (contactId) => {
     setSelectedContactId(contactId);
+    if (isMobile) {
+      setSidebarVisible(false);
+    }
 
     setContacts((prevContacts) =>
       prevContacts.map((contact) => {
@@ -110,6 +121,30 @@ export default function Chat() {
     sendMessage(text);
   };
 
+  const toggleSidebar = () => {
+    setSidebarVisible((prev) => !prev);
+  };
+
+  const handleBackToList = () => {
+    if (isMobile) {
+      setSidebarVisible(true);
+    }
+  };
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile && !sidebarVisible) {
+        setSidebarVisible(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [sidebarVisible]);
+
   // Effects
   useEffect(() => {
     if (selectedContactId) {
@@ -117,12 +152,19 @@ export default function Chat() {
     }
   }, [selectedContactId, fetchChatMessages]);
 
+  // Handle token errors
+  useEffect(() => {
+    if (tokenError) {
+      message.error("Authentication error. Please log in again.");
+    }
+  }, [tokenError]);
+
   // UI rendering
   const selectedContact =
     contacts.find((contact) => contact.id === selectedContactId) || null;
-  const navbarHeight = "64px";
+  const navbarHeight = isMobile ? "56px" : "64px";
   const loading = contactsLoading;
-  const error = contactsError || messagesError;
+  const error = contactsError || messagesError || tokenError;
 
   if (loading) {
     return (
@@ -167,12 +209,121 @@ export default function Chat() {
     );
   }
 
+  // Mobile view with drawer
+  if (isMobile) {
+    return (
+      <Flex
+        vertical
+        style={{ height: "100vh", width: "100%", overflow: "hidden" }}
+      >
+        <ChatNavigation toggleSidebar={toggleSidebar} isMobile={isMobile} />
+
+        <Flex
+          style={{
+            flex: 1,
+            marginTop: navbarHeight,
+            overflow: "hidden",
+          }}
+        >
+          {sidebarVisible ? (
+            <Flex
+              vertical
+              style={{
+                width: "100%",
+                height: "100%",
+                overflow: "auto",
+              }}
+            >
+              <Flex
+                justify="space-between"
+                align="center"
+                style={{
+                  padding: "8px 16px",
+                  borderBottom: `1px solid ${token.colorBorder}`,
+                }}
+              >
+                <h3 style={{ margin: 0 }}>Chats</h3>
+                <FloatButton
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddChatModal.open}
+                  size="small"
+                />
+              </Flex>
+              <ChatList
+                contacts={contacts}
+                selectedContactId={selectedContactId}
+                onSelectContact={handleSelectContact}
+                loading={loading}
+                isMobile={isMobile}
+              />
+            </Flex>
+          ) : (
+            <Flex
+              style={{
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
+              <ChatInterface
+                contact={selectedContact}
+                messages={selectedContact?.messages || []}
+                onSendMessage={handleSendMessage}
+                loading={messagesLoading}
+                error={messagesError}
+                isMobile={isMobile}
+                onBack={handleBackToList}
+              />
+            </Flex>
+          )}
+        </Flex>
+
+        {/* Add Chat Modal */}
+        <Modal
+          title="Create New Chat"
+          open={modalVisible}
+          onCancel={handleAddChatModal.close}
+          footer={null}
+        >
+          <Form
+            form={addChatForm}
+            layout="vertical"
+            onFinish={handleAddChatModal.submit}
+          >
+            <Form.Item
+              name="username"
+              label="Username"
+              rules={[
+                { required: true, message: "Please enter a username" },
+                { min: 3, message: "Username must be at least 3 characters" },
+              ]}
+            >
+              <Input placeholder="Enter username to chat with" />
+            </Form.Item>
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={addingChat}
+                block
+              >
+                Create Chat
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </Flex>
+    );
+  }
+
+  // Desktop view
   return (
     <Flex
       vertical
       style={{ height: "100vh", width: "100%", overflow: "hidden" }}
     >
-      <ChatNavigation />
+      <ChatNavigation toggleSidebar={toggleSidebar} isMobile={isMobile} />
       <Flex
         style={{
           flex: 1,
@@ -187,6 +338,7 @@ export default function Chat() {
             width: "33%",
             borderRight: `1px solid ${token.colorBorder}`,
             overflow: "auto",
+            display: sidebarVisible ? "flex" : "none",
           }}
         >
           <Flex
@@ -211,6 +363,7 @@ export default function Chat() {
             selectedContactId={selectedContactId}
             onSelectContact={handleSelectContact}
             loading={loading}
+            isMobile={isMobile}
           />
         </Flex>
 
@@ -218,7 +371,7 @@ export default function Chat() {
         <Flex
           style={{
             flex: 1,
-            width: "75%",
+            width: sidebarVisible ? "67%" : "100%",
             overflow: "hidden",
           }}
         >
@@ -229,6 +382,8 @@ export default function Chat() {
               onSendMessage={handleSendMessage}
               loading={messagesLoading}
               error={messagesError}
+              isMobile={isMobile}
+              onBack={handleBackToList}
             />
           ) : (
             <Flex justify="center" align="center" style={{ width: "100%" }}>
@@ -272,3 +427,5 @@ export default function Chat() {
     </Flex>
   );
 }
+
+export default withAuthProtection(Chat);

@@ -9,11 +9,17 @@ import {
   Flex,
   theme,
 } from "antd";
-import { SendOutlined } from "@ant-design/icons";
+import { SendOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
-export default function ChatInterface({ contact, messages, onSendMessage }) {
+export default function ChatInterface({
+  contact,
+  messages,
+  onSendMessage,
+  isMobile,
+  onBack,
+}) {
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef(null);
   const currentUsername = sessionStorage.getItem("username");
@@ -57,7 +63,11 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
           backgroundColor: token.colorBgContainer,
         }}
       >
-        <Text type="secondary">Select a conversation to start chatting</Text>
+        <Text type="secondary">
+          {isMobile
+            ? "Tap a chat to start messaging"
+            : "Select a conversation to start chatting"}
+        </Text>
       </Flex>
     );
   }
@@ -91,26 +101,38 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
       <Flex
         align="center"
         style={{
-          padding: token.padding,
+          padding: isMobile ? "8px 12px" : token.padding,
           borderBottom: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
         }}
       >
+        {isMobile && (
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={onBack}
+            style={{ marginRight: 8 }}
+            aria-label="Back to chats"
+          />
+        )}
         <Avatar
-          size={40}
+          size={isMobile ? 32 : 40}
           style={{ marginRight: token.margin }}
           src={contact.avatar}
         >
           {contact.name?.charAt(0).toUpperCase()}
         </Avatar>
         <Flex vertical style={{ flex: 1 }}>
-          <Text strong style={{ fontSize: token.fontSizeLG }}>
+          <Text
+            strong
+            style={{ fontSize: isMobile ? token.fontSize : token.fontSizeLG }}
+          >
             {contact.name}
           </Text>
           <Flex align="center">
             <Badge
               status={contact.isOnline ? "success" : "default"}
-              style={{ marginRight: token.marginXS }}
+              style={{ marginRight: token.marginXXS }}
             />
             <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
               {contact.isOnline ? "Online" : "Offline"}
@@ -124,7 +146,7 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
         vertical
         style={{
           flex: 1,
-          padding: token.padding,
+          padding: isMobile ? "8px" : token.padding,
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
@@ -143,21 +165,24 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
                   padding: `${token.paddingXXS} 0`,
                   display: "flex",
                   justifyContent: isCurrentUser ? "flex-end" : "flex-start",
-                  borderBottom: "none"
+                  borderBottom: "none",
                 }}
               >
                 {!isCurrentUser && (
-                  <Avatar size={32} style={{ marginRight: token.marginXS }}>
+                  <Avatar
+                    size={isMobile ? 24 : 32}
+                    style={{ marginRight: token.marginXXS }}
+                  >
                     {msg.sender?.charAt(0).toUpperCase()}
                   </Avatar>
                 )}
 
-                <Flex vertical style={{ maxWidth: "70%" }}>
+                <Flex vertical style={{ maxWidth: isMobile ? "80%" : "70%" }}>
                   {!isCurrentUser && (
                     <Text
                       type="secondary"
                       style={{
-                        fontSize: token.fontSizeSM,
+                        fontSize: isMobile ? "10px" : token.fontSizeSM,
                         marginBottom: token.marginXXS,
                       }}
                     >
@@ -167,7 +192,9 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
 
                   <div
                     style={{
-                      padding: `${token.paddingXS}px ${token.padding}px`,
+                      padding: isMobile
+                        ? `${token.paddingXXS}px ${token.paddingXS}px`
+                        : `${token.paddingXS}px ${token.padding}px`,
                       borderRadius: isCurrentUser
                         ? "18px 18px 0 18px"
                         : "18px 18px 18px 0",
@@ -176,6 +203,7 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
                         : token.colorBgBase,
                       color: isCurrentUser ? token.colorWhite : token.colorText,
                       boxShadow: token.boxShadowTertiary,
+                      fontSize: isMobile ? "14px" : "inherit",
                     }}
                   >
                     {msg.text}
@@ -183,7 +211,7 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
                   <Text
                     type="secondary"
                     style={{
-                      fontSize: token.fontSizeXS,
+                      fontSize: isMobile ? "10px" : token.fontSizeXS,
                       marginTop: token.marginXXS,
                       textAlign: isCurrentUser ? "right" : "left",
                     }}
@@ -201,7 +229,7 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
       {/* Input */}
       <Flex
         style={{
-          padding: token.padding,
+          padding: isMobile ? "8px" : token.padding,
           borderTop: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
         }}

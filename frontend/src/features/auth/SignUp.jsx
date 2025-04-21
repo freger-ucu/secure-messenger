@@ -11,6 +11,7 @@ import {
   Modal,
   Flex,
   Form,
+  theme
 } from "antd";
 import { Link, useNavigate } from "react-router";
 import { CopyOutlined } from "@ant-design/icons";
@@ -120,6 +121,7 @@ export default function RegisterPage() {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [seedPhrase, setSeedPhrase] = useState("");
   const navigate = useNavigate();
+  const { token } = theme.useToken();
 
   // Generate a seed phrase when component mounts
   useEffect(() => {
@@ -307,7 +309,7 @@ export default function RegisterPage() {
             <Flex justify="center" style={{ paddingTop: "12px" }}>
               <Text>
                 Already have an account?{" "}
-                <Link to="/login" style={{ color: "#1890ff" }}>
+                <Link to="/login" style={{ color: token.colorLinkActive }}>
                   Log In
                 </Link>
               </Text>
@@ -337,28 +339,42 @@ export default function RegisterPage() {
             showIcon
           />
 
-          <Flex
+          <div
             style={{
               position: "relative",
-              padding: "16px",
-              backgroundColor: "#f5f5f5",
-              borderRadius: "8px",
+              padding: token.paddingMD,
+              backgroundColor: token.colorBgContainer,
+              borderRadius: token.borderRadiusLG,
+              wordWrap: "break-word",
+              wordBreak: "break-word",
             }}
-            align="center"
-            justify="center"
           >
-            <Text strong style={{ fontSize: "18px", fontFamily: "monospace" }}>
-              {seedPhrase}
-            </Text>
             <Button
               icon={<CopyOutlined />}
               type="text"
               onClick={handleCopy}
-              style={{ position: "absolute", top: "8px", right: "8px" }}
+              style={{
+                position: "absolute",
+                top: token.marginXS,
+                right: token.marginXS,
+                zIndex: 1,
+                color: token.colorText,
+              }}
+            />
+            <Text
+              strong
+              style={{
+                fontSize: token.fontSizeLG,
+                fontFamily: "monospace",
+                display: "block",
+                paddingRight: `calc(${token.controlHeightLG}px + ${token.marginXS}px)`,
+                whiteSpace: "pre-wrap",
+                color: token.colorText,
+              }}
             >
-              Copy
-            </Button>
-          </Flex>
+              {seedPhrase}
+            </Text>
+          </div>
 
           <Text type="secondary">
             Please write down these 6 words in order and store them securely
