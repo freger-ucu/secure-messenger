@@ -1,5 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Input, Button, List, Avatar, Typography, Badge, Flex } from "antd";
+import {
+  Input,
+  Button,
+  List,
+  Avatar,
+  Typography,
+  Badge,
+  Flex,
+  theme,
+} from "antd";
 import { SendOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -8,8 +17,8 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef(null);
   const currentUsername = sessionStorage.getItem("username");
+  const { token } = theme.useToken();
 
-  // Format timestamp for display
   const formatTime = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString([], {
       hour: "2-digit",
@@ -17,14 +26,12 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
     });
   };
 
-  // Scroll to bottom of messages when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Handle sending a message
   const handleSend = () => {
     if (messageText.trim() && contact) {
       onSendMessage(messageText.trim());
@@ -32,7 +39,6 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
     }
   };
 
-  // Handle pressing Enter to send
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -40,7 +46,6 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
     }
   };
 
-  // If no contact is selected, display a placeholder
   if (!contact) {
     return (
       <Flex
@@ -49,7 +54,7 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
         style={{
           width: "100%",
           height: "100%",
-          backgroundColor: "#f5f5f5",
+          backgroundColor: token.colorBgContainer,
         }}
       >
         <Text type="secondary">Select a conversation to start chatting</Text>
@@ -57,7 +62,6 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
     );
   }
 
-  // Filter out duplicate messages that might be causing the echo
   const uniqueMessages = messages.reduce((acc, current) => {
     const duplicate = acc.find(
       (item) =>
@@ -79,93 +83,83 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
         width: "100%",
         height: "100%",
         position: "relative",
-        overflow: "hidden", // Prevent the entire ChatInterface from scrolling
+        overflow: "hidden",
+        backgroundColor: token.colorBgLayout,
       }}
     >
-      {/* Chat header */}
+      {/* Header */}
       <Flex
         align="center"
         style={{
-          padding: "16px 24px",
-          borderBottom: "1px solid #f0f0f0",
-          backgroundColor: "#fff",
+          padding: token.padding,
+          borderBottom: `1px solid ${token.colorBorder}`,
+          backgroundColor: token.colorBgContainer,
         }}
       >
         <Avatar
           size={40}
-          style={{ marginRight: 12 }}
-          // Use a fallback if avatar is not available
+          style={{ marginRight: token.margin }}
           src={contact.avatar}
         >
           {contact.name?.charAt(0).toUpperCase()}
         </Avatar>
         <Flex vertical style={{ flex: 1 }}>
-          <Text strong style={{ fontSize: 16 }}>
+          <Text strong style={{ fontSize: token.fontSizeLG }}>
             {contact.name}
           </Text>
           <Flex align="center">
             <Badge
               status={contact.isOnline ? "success" : "default"}
-              style={{ marginRight: 8 }}
+              style={{ marginRight: token.marginXS }}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
               {contact.isOnline ? "Online" : "Offline"}
             </Text>
           </Flex>
         </Flex>
       </Flex>
 
-      {/* Messages area - this is where we want the scrolling to happen */}
+      {/* Messages */}
       <Flex
         vertical
         style={{
           flex: 1,
-          padding: "16px 24px",
-          overflowY: "auto", // Only this section should scroll
-          backgroundColor: "#f5f5f5",
+          padding: token.padding,
+          overflowY: "auto",
           display: "flex",
           flexDirection: "column",
+          backgroundColor: token.colorBgContainer,
         }}
       >
         <List
           itemLayout="horizontal"
           dataSource={uniqueMessages}
-          style={{
-            width: "100%",
-          }}
+          style={{ width: "100%" }}
           renderItem={(msg) => {
-            // Check if the message is from the current user
             const isCurrentUser = msg.sender === currentUsername;
-
             return (
               <List.Item
                 style={{
-                  padding: "8px 0",
+                  padding: `${token.paddingXXS} 0`,
                   display: "flex",
                   justifyContent: isCurrentUser ? "flex-end" : "flex-start",
+                  borderBottom: "none"
                 }}
               >
-                {/* Show avatar for other users if available */}
                 {!isCurrentUser && (
-                  <Avatar
-                    size={32}
-                    style={{ marginRight: 8, alignSelf: "flex-end" }}
-                  >
+                  <Avatar size={32} style={{ marginRight: token.marginXS }}>
                     {msg.sender?.charAt(0).toUpperCase()}
                   </Avatar>
                 )}
 
-                <Flex
-                  vertical
-                  style={{
-                    maxWidth: "70%",
-                  }}
-                >
-                  {/* Sender name for messages not from current user */}
+                <Flex vertical style={{ maxWidth: "70%" }}>
                   {!isCurrentUser && (
                     <Text
                       type="secondary"
-                      style={{ fontSize: 12, marginBottom: 4 }}
+                      style={{
+                        fontSize: token.fontSizeSM,
+                        marginBottom: token.marginXXS,
+                      }}
                     >
                       {msg.sender}
                     </Text>
@@ -173,13 +167,15 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
 
                   <div
                     style={{
-                      padding: "10px 16px",
+                      padding: `${token.paddingXS}px ${token.padding}px`,
                       borderRadius: isCurrentUser
                         ? "18px 18px 0 18px"
                         : "18px 18px 18px 0",
-                      backgroundColor: isCurrentUser ? "#1890ff" : "#fff",
-                      color: isCurrentUser ? "#fff" : "#000",
-                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+                      backgroundColor: isCurrentUser
+                        ? token.colorPrimary
+                        : token.colorBgBase,
+                      color: isCurrentUser ? token.colorWhite : token.colorText,
+                      boxShadow: token.boxShadowTertiary,
                     }}
                   >
                     {msg.text}
@@ -187,8 +183,8 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
                   <Text
                     type="secondary"
                     style={{
-                      fontSize: 11,
-                      marginTop: 4,
+                      fontSize: token.fontSizeXS,
+                      marginTop: token.marginXXS,
                       textAlign: isCurrentUser ? "right" : "left",
                     }}
                   >
@@ -202,12 +198,12 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
         <div ref={messagesEndRef} />
       </Flex>
 
-      {/* Message input area */}
+      {/* Input */}
       <Flex
         style={{
-          padding: "16px 24px",
-          borderTop: "1px solid #f0f0f0",
-          backgroundColor: "#fff",
+          padding: token.padding,
+          borderTop: `1px solid ${token.colorBorder}`,
+          backgroundColor: token.colorBgContainer,
         }}
       >
         <Input
@@ -215,7 +211,7 @@ export default function ChatInterface({ contact, messages, onSendMessage }) {
           value={messageText}
           onChange={(e) => setMessageText(e.target.value)}
           onKeyPress={handleKeyPress}
-          style={{ flex: 1, marginRight: 16 }}
+          style={{ flex: 1, marginRight: token.margin }}
         />
         <Button
           type="primary"

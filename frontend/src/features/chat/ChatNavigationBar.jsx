@@ -1,14 +1,17 @@
 import { clearTokens } from "../../utilities/auth";
 import { useNavigate } from "react-router";
-import { Flex, Button, Typography } from "antd";
+import { Flex, Button, Typography, theme } from "antd";
 
 export default function ChatNavigation() {
   const navigate = useNavigate();
+  const {token} = theme.useToken();
 
   const handleLogout = () => {
     clearTokens();
     navigate("/login");
   };
+
+  console.log("token", token)
 
   return (
     <Flex
@@ -20,8 +23,8 @@ export default function ChatNavigation() {
         left: 0,
         right: 0,
         padding: "16px 24px",
-        borderBottom: "1px solid #ddd",
-        background: "#fff",
+        borderBottom: `1px solid ${token.colorBorder}`,
+        background: token.colorBgContainer,
         zIndex: 1000,
       }}
     >

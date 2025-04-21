@@ -1,4 +1,4 @@
-import { List, Badge, Spin } from "antd";
+import { List, Badge, Spin, theme } from "antd";
 
 export default function ChatList({
   contacts,
@@ -6,6 +6,9 @@ export default function ChatList({
   onSelectContact,
   loading,
 }) {
+
+  const { token } = theme.useToken();
+
   if (loading) {
     return (
       <div style={{ padding: "20px", textAlign: "center", width: "100%" }}>
@@ -34,7 +37,9 @@ export default function ChatList({
             padding: "12px 24px",
             cursor: "pointer",
             backgroundColor:
-              contact.id === selectedContactId ? "#f0f0f0" : "transparent",
+              contact.id === selectedContactId
+                ? token.colorBgElevated
+                : "transparent",
           }}
         >
           <List.Item.Meta

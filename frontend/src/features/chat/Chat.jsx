@@ -1,90 +1,156 @@
 import { useState, useEffect, useRef } from "react";
-import { Flex, message, Button, Modal, Input, Form } from "antd";
+import { Flex, message, Button, Modal, Input, Form, theme } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import ChatNavigation from "./ChatNavigationBar";
 import ChatList from "./ChatList";
 import ChatInterface from "./ChatInterface";
 
 export default function Chat() {
+  // State management
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [addChatForm] = Form.useForm();
   const [addingChat, setAddingChat] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messageLoadError, setMessageLoadError] = useState(null);
+  const [error, setError] = useState(null);
 
+  const { token } = theme.useToken();
+ 
+  // References and constants
   const wsRef = useRef(null);
   const accessToken = sessionStorage.getItem("accessToken");
   const currentUsername = sessionStorage.getItem("username");
+  const API_BASE_URL = "http://127.0.0.1:8000/api";
+  const WS_BASE_URL = "ws://127.0.0.1:8000/ws";
+  const REFRESH_INTERVAL = 5000; // 5 seconds
+  const MAX_RETRY_COUNT = 3;
+
+  // Authentication check
   if (!currentUsername || !accessToken) {
-    // Redirect to login if no username or token is found
-    // Or handle this case appropriately
     console.error("No username or access token found!");
-    // You could also use a useEffect to redirect
-    // or show a message to the user
+    // Could implement redirect logic here
   }
 
-  // Fetch all chats the user has access to
-  useEffect(() => {
-    const fetchChats = async () => {
-      if (!accessToken) {
-        console.error("❌ No access token found in sessionStorage!");
-        message.error("Authentication error. Please log in again.");
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const response = await fetch("http://127.0.0.1:8000/api/chat/", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch chats: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === "success" && Array.isArray(data.chats)) {
-          const formattedContacts = data.chats.map((chat) => ({
-            id: chat.id,
-            name: chat.other_user || "Unknown User",
-            lastMessage:
-              chat.latest_message && chat.latest_message.length > 0
-                ? {
-                    text: chat.latest_message[0].body,
-                    timestamp: new Date(chat.latest_message[0].timestamp),
-                    isRead: true,
-                  }
-                : null,
-            messages: [],
-          }));
-
-          setContacts(formattedContacts);
-
-          if (formattedContacts.length > 0 && !selectedContactId) {
-            setSelectedContactId(formattedContacts[0].id);
-          }
-        } else {
-          throw new Error("Invalid response format from server");
-        }
-      } catch (error) {
-        console.error("Error fetching chats:", error);
-        message.error("Failed to load chats. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
+  // API request helpers
+  const fetchWithAuth = async (endpoint, options = {}) => {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const fetchOptions = {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
     };
 
-    fetchChats();
-  }, [accessToken, selectedContactId]);
+    const response = await fetch(url, fetchOptions);
 
-  // Function to create a new chat
-  const handleCreateChat = async (values) => {
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+
+    return response.json();
+  };
+
+  // Chat data management
+  const fetchContacts = async () => {
+    if (!accessToken) return;
+
+    try {
+      const data = await fetchWithAuth("/chat/");
+
+      if (data.status === "success" && Array.isArray(data.chats)) {
+        const formattedContacts = data.chats.map((chat) => ({
+          id: chat.id,
+          name: chat.other_user || "Unknown User",
+          lastMessage:
+            chat.latest_message?.length > 0
+              ? {
+                  text: chat.latest_message[0].body,
+                  timestamp: new Date(chat.latest_message[0].timestamp),
+                  isRead: true,
+                }
+              : null,
+        }));
+
+        // Update contacts while preserving messages for existing chats
+        setContacts((prevContacts) => {
+          const existingContactsMap = {};
+          prevContacts.forEach((contact) => {
+            existingContactsMap[contact.id] = contact.messages || [];
+          });
+
+          return formattedContacts.map((newContact) => ({
+            ...newContact,
+            messages: existingContactsMap[newContact.id] || [],
+          }));
+        });
+
+        // Select first contact if none selected
+        if (formattedContacts.length > 0 && !selectedContactId) {
+          setSelectedContactId(formattedContacts[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing chats:", error);
+    }
+  };
+
+  const fetchChatMessages = async (chatId, retryCount = 0) => {
+    if (!accessToken || !chatId) return;
+
+    setMessagesLoading(true);
+    setMessageLoadError(null);
+
+    try {
+      const data = await fetchWithAuth(`/chat/${chatId}/history/`);
+
+      if (data.status === "success" && Array.isArray(data.messages)) {
+        console.log(
+          `Loaded ${data.messages.length} messages for chat #${chatId}`
+        );
+
+        setContacts((prevContacts) =>
+          prevContacts.map((contact) => {
+            if (contact.id === chatId) {
+              return {
+                ...contact,
+                messages: data.messages.map((msg) => ({
+                  id: msg.id,
+                  text: msg.body,
+                  sender: msg.author,
+                  timestamp: new Date(msg.timestamp),
+                  isFromCurrentUser: msg.author === currentUsername,
+                })),
+              };
+            }
+            return contact;
+          })
+        );
+      } else {
+        throw new Error("Invalid response format from server");
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setMessageLoadError(error.message);
+      setError(error);
+
+      // Retry logic
+      if (retryCount < MAX_RETRY_COUNT) {
+        console.log(`Retrying message fetch (attempt ${retryCount + 1})...`);
+        setTimeout(() => fetchChatMessages(chatId, retryCount + 1), 1000);
+      } else {
+        message.error("Failed to load messages. Please try again.");
+      }
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const createNewChat = async (values) => {
     if (!accessToken) {
       message.error("Authentication error. Please log in again.");
       return;
@@ -93,31 +159,16 @@ export default function Chat() {
     setAddingChat(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/chat/create/", {
+      const data = await fetchWithAuth("/chat/create/", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           user2_username: values.username,
         }),
       });
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("User not found");
-        } else {
-          throw new Error(`Failed to create chat: ${response.status}`);
-        }
-      }
-
-      const data = await response.json();
-
       if (data.status === "success") {
         message.success(`Chat with ${values.username} created successfully`);
 
-        // Add new chat to the list
         const newChat = {
           id: data.chat.id,
           name: values.username,
@@ -142,75 +193,110 @@ export default function Chat() {
     }
   };
 
-  // Function to fetch messages for a specific chat
-  const fetchChatMessages = async (chatId) => {
-    if (!accessToken || !chatId) return;
+  // Message handling
+  const handleSendMessage = (text) => {
+    if (!text.trim() || !selectedContactId) return;
 
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/chat/${chatId}/history/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
+    const selectedContact = contacts.find(
+      (contact) => contact.id === selectedContactId
+    );
+    if (!selectedContact) return;
+
+    const newMessage = {
+      id: Date.now(),
+      text: text,
+      sender: currentUsername,
+      timestamp: new Date(),
+    };
+
+    // Update UI with new message
+    setContacts((prevContacts) =>
+      prevContacts.map((contact) => {
+        if (contact.id === selectedContactId) {
+          return {
+            ...contact,
+            messages: [...(contact.messages || []), newMessage],
+            lastMessage: {
+              text: text,
+              timestamp: new Date(),
+              isRead: true,
+            },
+          };
         }
+        return contact;
+      })
+    );
+
+    // Send message via WebSocket
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          message: text,
+          sender: currentUsername,
+        })
       );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch messages: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.status === "success" && Array.isArray(data.messages)) {
-        setContacts((prevContacts) =>
-          prevContacts.map((contact) => {
-            if (contact.id === chatId) {
-              return {
-                ...contact,
-                messages: data.messages.map((msg) => ({
-                  id: msg.id,
-                  text: msg.body,
-                  sender: msg.author, // Changed from sender to author
-                  timestamp: new Date(msg.timestamp),
-                })),
-              };
-            }
-            return contact;
-          })
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      message.error("Failed to load messages. Please try again.");
+    } else {
+      message.error("Connection lost. Please refresh the page.");
     }
   };
 
-  // Connect to WebSocket for the selected chat
-  useEffect(() => {
-    if (!accessToken || !selectedContactId) {
-      return;
-    }
+  // UI interaction handlers
+  const handleSelectContact = (contactId) => {
+    setSelectedContactId(contactId);
 
+    setContacts((prevContacts) =>
+      prevContacts.map((contact) => {
+        if (
+          contact.id === contactId &&
+          contact.lastMessage &&
+          !contact.lastMessage.isRead
+        ) {
+          return {
+            ...contact,
+            lastMessage: {
+              ...contact.lastMessage,
+              isRead: true,
+            },
+          };
+        }
+        return contact;
+      })
+    );
+  };
+
+  const handleAddChatModal = {
+    open: () => setModalVisible(true),
+    close: () => {
+      setModalVisible(false);
+      addChatForm.resetFields();
+    },
+    submit: (values) => createNewChat(values),
+  };
+
+  // Setup WebSocket connection
+  const setupWebSocket = (chatId) => {
+    if (!accessToken || !chatId) return;
+
+    // Close existing connection if any
     if (wsRef.current) {
       wsRef.current.close();
     }
 
+    // Create new connection
     const ws = new WebSocket(
-      `ws://127.0.0.1:8000/ws/chatroom/${selectedContactId}/?token=${accessToken}`
+      `${WS_BASE_URL}/chatroom/${chatId}/?token=${accessToken}`
     );
 
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log(`🔥 Connected to WebSocket Chatroom #${selectedContactId}`);
+      console.log(`🔥 Connected to WebSocket Chatroom #${chatId}`);
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
+      // Skip messages from self
       if (data.sender === currentUsername) return;
 
       const receivedMessage = {
@@ -220,9 +306,10 @@ export default function Chat() {
         timestamp: new Date(),
       };
 
+      // Update UI with received message
       setContacts((prevContacts) =>
         prevContacts.map((contact) => {
-          if (contact.id === selectedContactId) {
+          if (contact.id === chatId) {
             return {
               ...contact,
               messages: [...(contact.messages || []), receivedMessage],
@@ -247,85 +334,98 @@ export default function Chat() {
       console.warn("🪦 WebSocket connection closed");
     };
 
-    fetchChatMessages(selectedContactId);
+    return ws;
+  };
+
+  // Effects
+  // Initial data loading
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const initialize = async () => {
+      try {
+        setLoading(true);
+        await fetchContacts();
+      } catch (error) {
+        console.error("Error initializing chats:", error);
+        message.error("Failed to load chats. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initialize();
+
+    // Set up periodic refresh
+    const intervalId = setInterval(fetchContacts, REFRESH_INTERVAL);
+    return () => clearInterval(intervalId);
+  }, [accessToken]);
+
+  // Load messages when selected contact changes
+  useEffect(() => {
+    if (selectedContactId) {
+      fetchChatMessages(selectedContactId);
+    }
+  }, [selectedContactId]);
+
+  // WebSocket connection management
+  useEffect(() => {
+    if (!accessToken || !selectedContactId) return;
+
+    const ws = setupWebSocket(selectedContactId);
 
     return () => {
-      ws.close();
+      if (ws) ws.close();
     };
   }, [accessToken, selectedContactId, currentUsername]);
 
-  // Function to send messages
-  const handleSendMessage = (text) => {
-    if (!text.trim() || !selectedContactId) return;
-
-    const selectedContact = contacts.find(
-      (contact) => contact.id === selectedContactId
-    );
-    if (!selectedContact) return;
-
-    const newMessage = {
-      id: Date.now(),
-      text: text,
-      sender: currentUsername,
-      timestamp: new Date(),
-    };
-
-    setContacts((prevContacts) =>
-      prevContacts.map((contact) => {
-        if (contact.id === selectedContactId) {
-          return {
-            ...contact,
-            messages: [...(contact.messages || []), newMessage],
-            lastMessage: {
-              text: text,
-              timestamp: new Date(),
-              isRead: true,
-            },
-          };
-        }
-        return contact;
-      })
-    );
-
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(
-        JSON.stringify({
-          message: text,
-          sender: currentUsername,
-        })
-      );
-    } else {
-      message.error("Connection lost. Please refresh the page.");
-    }
-  };
-
-  // Function to select a contact
-  const handleSelectContact = (contactId) => {
-    setSelectedContactId(contactId);
-
-    setContacts((prevContacts) =>
-      prevContacts.map((contact) => {
-        if (
-          contact.id === contactId &&
-          contact.lastMessage &&
-          !contact.lastMessage.isRead
-        ) {
-          return {
-            ...contact,
-            lastMessage: {
-              ...contact.lastMessage,
-              isRead: true,
-            },
-          };
-        }
-        return contact;
-      })
-    );
-  };
-
+  // UI rendering
   const selectedContact =
     contacts.find((contact) => contact.id === selectedContactId) || null;
   const navbarHeight = "64px";
+
+  if (loading) {
+    return (
+      <Flex
+        justify="center"
+        align="center"
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: token.colorBgContainerDisabled,
+        }}
+      >
+        <p>Loading messages...</p>
+      </Flex>
+    );
+  }
+
+  if (error) {
+    return (
+      <Flex
+        vertical
+        justify="center"
+        align="center"
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: token.colorErrorBg,
+          padding: "0 24px",
+        }}
+      >
+        <p type="danger" style={{ marginBottom: 16 }}>
+          Error loading messages: {error.message}
+        </p>
+        <Button
+          onClick={() =>
+            selectedContactId && fetchChatMessages(selectedContactId)
+          }
+        >
+          Retry
+        </Button>
+      </Flex>
+    );
+  }
 
   return (
     <Flex
@@ -337,15 +437,16 @@ export default function Chat() {
         style={{
           flex: 1,
           marginTop: navbarHeight,
-          overflow: "hidden", // Add this to prevent scrolling of the entire layout
+          overflow: "hidden",
         }}
       >
+        {/* Chat List Section */}
         <Flex
           vertical
           style={{
             width: "33%",
-            borderRight: "1px solid #f0f0f0",
-            overflow: "auto", // Chat list can still scroll
+            borderRight: `1px solid ${token.colorBorder}`,
+            overflow: "auto",
           }}
         >
           <Flex
@@ -353,14 +454,14 @@ export default function Chat() {
             align="center"
             style={{
               padding: "12px 16px",
-              borderBottom: "1px solid #f0f0f0",
+              borderBottom: `1px solid ${token.colorBorder}`,
             }}
           >
             <h3 style={{ margin: 0 }}>Chats</h3>
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => setModalVisible(true)}
+              onClick={handleAddChatModal.open}
             >
               Add Chat
             </Button>
@@ -372,11 +473,13 @@ export default function Chat() {
             loading={loading}
           />
         </Flex>
+
+        {/* Chat Interface Section */}
         <Flex
           style={{
             flex: 1,
             width: "75%",
-            overflow: "hidden", // Add this to ensure chat interface container doesn't scroll
+            overflow: "hidden",
           }}
         >
           {selectedContact ? (
@@ -384,6 +487,8 @@ export default function Chat() {
               contact={selectedContact}
               messages={selectedContact.messages || []}
               onSendMessage={handleSendMessage}
+              loading={messagesLoading}
+              error={messageLoadError}
             />
           ) : (
             <Flex justify="center" align="center" style={{ width: "100%" }}>
@@ -399,13 +504,14 @@ export default function Chat() {
       <Modal
         title="Create New Chat"
         open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          addChatForm.resetFields();
-        }}
+        onCancel={handleAddChatModal.close}
         footer={null}
       >
-        <Form form={addChatForm} layout="vertical" onFinish={handleCreateChat}>
+        <Form
+          form={addChatForm}
+          layout="vertical"
+          onFinish={handleAddChatModal.submit}
+        >
           <Form.Item
             name="username"
             label="Username"
