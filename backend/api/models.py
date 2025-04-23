@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from cryptography.fernet import Fernet
 
 # class ChatMessage(models.Model):
 #     """ chat message class """
@@ -36,6 +37,7 @@ class Chat(models.Model):
     user1 = models.ForeignKey(User, related_name='chats_as_user1', on_delete=models.CASCADE)
     user2 = models.ForeignKey(User, related_name='chats_as_user2', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    encryption_key = models.BinaryField(max_length=44, blank=True, null=True)
 
     class Meta:
         constraints = [
@@ -56,11 +58,11 @@ class Chat(models.Model):
 
 
     def save(self, *args, **kwargs):
-
         self.full_clean()
-
         if self.user1.id > self.user2.id:
             self.user1, self.user2 = self.user2, self.user1
+        if not self.encryption_key:
+            self.encryption_key = Fernet.generate_key()
         super().save(*args, **kwargs)
 
     def __str__(self):

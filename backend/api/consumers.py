@@ -2,6 +2,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import Chat, GroupMessage
 from channels.db import database_sync_to_async
+from cryptography.fernet import Fernet
 
 class ChatroomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -11,7 +12,7 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
         self.chat = await self.get_chat()
 
         if self.user.id in (self.chat.user1_id, self.chat.user2_id):
-            # Connect to the group
+            self.fernet = Fernet(self.chat.encryption_key)
             await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name
@@ -35,10 +36,12 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
 
             data = json.loads(text_data)
             message = data['message']
+            encrypted_message = self.fernet.encrypt(message.encode()).decode()
 
             print("User:", self.user)
             print("Is Anonymous:", self.user.is_anonymous)
             print("Message:", message)
+            print("Encrypted Message:", encrypted_message)
 
             await self.save_message(message)
 
