@@ -50,15 +50,9 @@ const ContactCard = ({
       onClick={() => onSelect(contact.id)}
     >
       {/* Avatar with online status indicator */}
-      <Badge
-        dot
-        color={contact.isOnline ? "#52c41a" : "#d9d9d9"}
-        offset={[-4, 32]}
-      >
-        <Avatar size={40} src={contact.avatar} style={{ flexShrink: 0 }}>
-          {!contact.avatar && contact.name.charAt(0).toUpperCase()}
-        </Avatar>
-      </Badge>
+      <Avatar size={40} src={contact.avatar} style={{ flexShrink: 0 }}>
+        {!contact.avatar && contact.name.charAt(0).toUpperCase()}
+      </Avatar>
 
       {/* Contact details */}
       <Flex
