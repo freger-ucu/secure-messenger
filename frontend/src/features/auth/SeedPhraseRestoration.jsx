@@ -97,7 +97,7 @@ export default function SeedPhraseRestoration() {
       setLoading(false);
       return;
     }
-    const API_BASE = process.env.API_URL;
+    const API_BASE = import.meta.env.VITE_API_URL;
 
     try {
       // Make API call to the backend with PUT method as required
