@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE = process.env.API_URL;
+const API_BASE_URL = `http://${API_BASE}/api`;
 // Default token refresh interval (4 minutes to refresh before the typical 5-minute expiration)
 const DEFAULT_REFRESH_INTERVAL = 4 * 60 * 1000;
 

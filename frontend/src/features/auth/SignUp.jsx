@@ -123,10 +123,14 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { token } = theme.useToken();
 
+  const API_BASE = process.env.API_URL;
+
   // Generate a seed phrase when component mounts
   useEffect(() => {
     setSeedPhrase(generateSeedPhrase());
   }, []);
+
+
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -134,7 +138,7 @@ export default function RegisterPage() {
 
     try {
       // Call the backend registration endpoint with the automatically generated seed phrase
-      const response = await fetch("http://127.0.0.1:8000/auth/register/", {
+      const response = await fetch(`http://${API_BASE}/auth/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
