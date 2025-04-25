@@ -2,10 +2,11 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useState } from "react";
-import { Input, Button, Alert, Typography, message, Flex, Form } from "antd";
+import { Input, Button, Alert, Typography, message, Flex, Form, ConfigProvider, theme } from "antd";
 import { Link, useNavigate } from "react-router";
 
 const { Title, Text } = Typography;
+const { defaultAlgorithm, darkAlgorithm } = theme;
 
 // Constants
 const API_BASE = import.meta.env.VITE_API_URL;
@@ -41,6 +42,45 @@ const FormField = ({ name, control, errors, type = "text", placeholder }) => (
     )}
   </Form.Item>
 );
+const arrayBufferToBase64 = (buffer) => {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+};
+
+const generateAndSaveKeypair = async (accessToken) => {
+  // Generate keypair
+  const keyPair = await window.crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 4096,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+
+  // Export public & private key
+  const exportedPublicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+  const exportedPrivateKey = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+
+  // Save private key locally (in localStorage)
+  localStorage.setItem("privateKey", arrayBufferToBase64(exportedPrivateKey));
+
+  // Send public key to backend
+  await fetch("http://127.0.0.1:8000/api/public-key/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`
+    },
+    body: JSON.stringify({
+      public_key: arrayBufferToBase64(exportedPublicKey)
+    })
+  });
+
+  console.log("Public key sent to backend successfully!");
+  message.success("Public key sent to backend successfully!");
+};
 
 // API call function
 const loginUser = async (data) => {
@@ -77,14 +117,29 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const result = await loginUser(data);
+      const response = await fetch("http://127.0.0.1:8000/auth/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-      // Store auth data
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Login failed");
+      }
+
+      // Save tokens and username
       sessionStorage.setItem("accessToken", result.access);
       sessionStorage.setItem("refreshToken", result.refresh);
       sessionStorage.setItem("username", data.username);
 
       message.success("Login successful!");
+
+      // Handle keypair generation and storage
+      await generateAndSaveKeypair(result.access);
+
+      // Redirect user to chat page
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -155,6 +210,8 @@ export default function LoginPage() {
         >
           Restore Account
         </Button>
+
+        хуй
 
         <Flex justify="center" style={{ marginTop: "8px" }}>
           <Text>
