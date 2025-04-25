@@ -211,8 +211,6 @@ export default function LoginPage() {
           Restore Account
         </Button>
 
-        хуй
-
         <Flex justify="center" style={{ marginTop: "8px" }}>
           <Text>
             Don't have an account?{" "}
