@@ -94,4 +94,4 @@ class PublicKey(models.Model):
     public_key_pem = models.TextField()
 
     def __str__(self):
-        return f'{self.public_key}'
+        return f'{self.public_key_pem}'

@@ -112,8 +112,11 @@ class UploadPublicKeyView(APIView):
         key_data = request.data.get('public_key')
         obj, created = PublicKey.objects.update_or_create(
             user=request.user,
-            defaults={'public_key': key_data}
+            defaults={'public_key_pem': key_data}
         )
         return Response({
             'status': 'success',})
+
+
+
 

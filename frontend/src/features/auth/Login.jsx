@@ -16,6 +16,69 @@ const schema = yup.object().shape({
     .required("Password is required"),
 });
 
+// Helper functions
+const arrayBufferToBase64 = (buffer) => {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+};
+
+const generateAndSaveKeypair = async (accessToken) => {
+  // Generate keypair
+  const keyPair = await window.crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 4096,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+
+  // Export public & private key
+  const exportedPublicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+  const exportedPrivateKey = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+
+  // Save private key locally (in localStorage)
+  localStorage.setItem("privateKey", arrayBufferToBase64(exportedPrivateKey));
+
+  // Send public key to backend
+  await fetch("http://127.0.0.1:8000/api/public-key/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`
+    },
+    body: JSON.stringify({
+      public_key: arrayBufferToBase64(exportedPublicKey)
+    })
+  });
+
+  console.log("Public key sent to backend successfully!");
+  message.success("Public key sent to backend successfully!");
+};
+
+// Reusable form field component
+const FormField = ({ name, control, errors, type = "text", placeholder }) => (
+  <Flex vertical gap="small">
+    <Form.Item style={{ marginBottom: 0 }}>
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          type === "password" ?
+            <Input.Password {...field} placeholder={placeholder} size="large" /> :
+            <Input {...field} type={type} placeholder={placeholder} size="large" />
+        )}
+      />
+      {errors[name] && (
+        <Text type="danger" style={{ fontSize: "14px", marginTop: "4px" }}>
+          {errors[name].message}
+        </Text>
+      )}
+    </Form.Item>
+  </Flex>
+);
+
 export default function LoginPage() {
   const {
     control,
@@ -41,23 +104,24 @@ export default function LoginPage() {
       });
 
       const result = await response.json();
-      console.log(result);
 
       if (!response.ok) {
         throw new Error(result.message || "Login failed");
       }
 
-      // Save tokens in session storage
+      // Save tokens and username
       sessionStorage.setItem("accessToken", result.access);
       sessionStorage.setItem("refreshToken", result.refresh);
-
-      // Username as well
       sessionStorage.setItem("username", data.username);
 
       message.success("Login successful!");
 
-      // Redirect user to the chat page
+      // Handle keypair generation and storage
+      await generateAndSaveKeypair(result.access);
+
+      // Redirect user to chat page
       navigate("/");
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -79,54 +143,20 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} style={{ width: "100%" }}>
           <Flex vertical gap="large">
-            <Flex vertical gap="small">
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Controller
-                  name="username"
-                  control={control}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="text"
-                      placeholder="Username"
-                      size="large"
-                    />
-                  )}
-                />
-                {errors.username && (
-                  <Text
-                    type="danger"
-                    style={{ fontSize: "14px", marginTop: "4px" }}
-                  >
-                    {errors.username.message}
-                  </Text>
-                )}
-              </Form.Item>
-            </Flex>
+            <FormField
+              name="username"
+              control={control}
+              errors={errors}
+              placeholder="Username"
+            />
 
-            <Flex vertical gap="small">
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Controller
-                  name="password"
-                  control={control}
-                  render={({ field }) => (
-                    <Input.Password
-                      {...field}
-                      placeholder="Password"
-                      size="large"
-                    />
-                  )}
-                />
-                {errors.password && (
-                  <Text
-                    type="danger"
-                    style={{ fontSize: "14px", marginTop: "4px" }}
-                  >
-                    {errors.password.message}
-                  </Text>
-                )}
-              </Form.Item>
-            </Flex>
+            <FormField
+              name="password"
+              control={control}
+              errors={errors}
+              type="password"
+              placeholder="Password"
+            />
 
             <Button
               type="primary"
@@ -160,7 +190,7 @@ export default function LoginPage() {
 
         <Flex justify="center" style={{ marginTop: "8px" }}>
           <Text>
-            Dont have an account?{" "}
+            Don't have an account?{" "}
             <Link to="/register" style={{ color: "#1890ff" }}>
               Sign Up
             </Link>
