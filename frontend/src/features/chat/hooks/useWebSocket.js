@@ -6,7 +6,7 @@ export function useWebSocket(chatId, contacts, setContacts) {
   const wsRef = useRef(null);
   const accessToken = sessionStorage.getItem("accessToken");
   const currentUsername = sessionStorage.getItem("username");
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
   const WS_BASE_URL = `ws://${API_BASE_URL}/ws`;
 
   // Setup WebSocket connection
