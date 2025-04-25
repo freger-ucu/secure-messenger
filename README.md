@@ -12,6 +12,32 @@ docker-compose -f docker-compose-dev.yml exec backend bash
 apt-get update && apt-get install -y postgresql-client
 py manage.py dbshell
 ````
+## .env files for development
+
+### .env in root
+```sh
+POSTGRES_DB=messenger
+POSTGRES_USER=messenger
+POSTGRES_PASSWORD=development
+DB_USER=messenger
+DB_PASSWORD=development
+DB_HOST=db
+DB_PORT=5432
+````
+
+### backend/.env
+```sh
+DB_NAME=messenger
+DB_USER=messenger
+DB_PASSWORD=development
+DB_HOST=db
+DB_PORT=5432
+```
+
+### frontend/.env
+```sh
+VITE_API_URL=localhost:8000
+```
 
 ## Running the Backend and Frontend separately
 

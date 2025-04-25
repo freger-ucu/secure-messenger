@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,8 +28,7 @@ SECRET_KEY = "django-insecure-q#4c&(td1%ay76%gt_kl*7=#@725*@i_(5jl*gnli_jtk2=^tf
 DEBUG = True
 
 ALLOWED_HOSTS = [
-        "localhost",
-        "142.93.247.66"
+    os.environ.get('API_BASE_URL', 'localhost')
         ]
 
 # Application definition
@@ -74,8 +75,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Your frontend URL
-    "http://142.93.247.66:5173",
+    "http://" + os.environ.get('API_BASE_URL', 'localhost') + ":5173",
 ]
 
 
@@ -115,11 +115,11 @@ CHANNEL_LAYERS = {
 DATABASES = {
     "default": {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'messenger',
-        'USER': 'messenger',
-        'PASSWORD': 'development',
-        'HOST': 'db',
-        'PORT': '5432'
+        'NAME': os.environ.get('DB_NAME', 'messenger'),
+        'USER': os.environ.get('DB_USER', 'messenger'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'development'),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': os.environ.get('DB_PORT', '5432')
     }
 }
 

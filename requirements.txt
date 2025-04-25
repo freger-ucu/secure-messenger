@@ -3,5 +3,8 @@ djangorestframework~=3.15.2
 djangorestframework-simplejwt~=5.5.0
 psycopg2-binary~=2.9.10
 django-cors-headers
-channels
+channels~=4.2.2
 daphne
+PyJWT~=2.9.0
+dotenv~=0.9.9
+python-dotenv~=1.1.0

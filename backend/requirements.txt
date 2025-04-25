@@ -5,3 +5,6 @@ django-cors-headers
 psycopg
 channels
 daphne
+PyJWT
+dotenv
+python-dotenv
