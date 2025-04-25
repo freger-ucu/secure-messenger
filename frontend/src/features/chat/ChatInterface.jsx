@@ -134,9 +134,6 @@ export default function ChatInterface({
               status={contact.isOnline ? "success" : "default"}
               style={{ marginRight: token.marginXXS }}
             />
-            <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-              {contact.isOnline ? "Online" : "Offline"}
-            </Text>
           </Flex>
         </Flex>
       </Flex>

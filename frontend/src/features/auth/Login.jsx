@@ -3,12 +3,16 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useState } from "react";
 import { Input, Button, Alert, Typography, message, Flex, Form } from "antd";
-import { Link, useNavigate } from "react-router"; // Fix import
+import { Link, useNavigate } from "react-router";
 
 const { Title, Text } = Typography;
 
+// Constants
+const API_BASE = import.meta.env.VITE_API_URL;
+const API_URL = `http://${API_BASE}/auth/login/`;
+
 // Validation Schema
-const schema = yup.object().shape({
+const loginSchema = yup.object().shape({
   username: yup.string().required("Username is required"),
   password: yup
     .string()
@@ -16,47 +20,71 @@ const schema = yup.object().shape({
     .required("Password is required"),
 });
 
+// Form Field Component
+const FormField = ({ name, control, errors, type = "text", placeholder }) => (
+  <Form.Item style={{ marginBottom: 0 }}>
+    <Controller
+      name={name}
+      control={control}
+      render={({ field }) => (
+        type === "password" ? (
+          <Input.Password {...field} placeholder={placeholder} size="large" />
+        ) : (
+          <Input {...field} type={type} placeholder={placeholder} size="large" />
+        )
+      )}
+    />
+    {errors[name] && (
+      <Text type="danger" style={{ fontSize: "14px", marginTop: "4px" }}>
+        {errors[name].message}
+      </Text>
+    )}
+  </Form.Item>
+);
+
+// API call function
+const loginUser = async (data) => {
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Login failed");
+  }
+
+  return result;
+};
+
 export default function LoginPage() {
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(loginSchema),
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const onSubmit = async (data) => {
+  const handleLogin = async (data) => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/auth/login/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const result = await loginUser(data);
 
-      const result = await response.json();
-      console.log(result);
-
-      if (!response.ok) {
-        throw new Error(result.message || "Login failed");
-      }
-
-      // Save tokens in session storage
+      // Store auth data
       sessionStorage.setItem("accessToken", result.access);
       sessionStorage.setItem("refreshToken", result.refresh);
-
-      // Username as well
       sessionStorage.setItem("username", data.username);
 
       message.success("Login successful!");
-
-      // Redirect user to the chat page
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -77,55 +105,25 @@ export default function LoginPage() {
           Log In
         </Title>
 
-        <form onSubmit={handleSubmit(onSubmit)} style={{ width: "100%" }}>
+        <form onSubmit={handleSubmit(handleLogin)} style={{ width: "100%" }}>
           <Flex vertical gap="large">
             <Flex vertical gap="small">
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Controller
-                  name="username"
-                  control={control}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="text"
-                      placeholder="Username"
-                      size="large"
-                    />
-                  )}
-                />
-                {errors.username && (
-                  <Text
-                    type="danger"
-                    style={{ fontSize: "14px", marginTop: "4px" }}
-                  >
-                    {errors.username.message}
-                  </Text>
-                )}
-              </Form.Item>
+              <FormField
+                name="username"
+                control={control}
+                errors={errors}
+                placeholder="Username"
+              />
             </Flex>
 
             <Flex vertical gap="small">
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Controller
-                  name="password"
-                  control={control}
-                  render={({ field }) => (
-                    <Input.Password
-                      {...field}
-                      placeholder="Password"
-                      size="large"
-                    />
-                  )}
-                />
-                {errors.password && (
-                  <Text
-                    type="danger"
-                    style={{ fontSize: "14px", marginTop: "4px" }}
-                  >
-                    {errors.password.message}
-                  </Text>
-                )}
-              </Form.Item>
+              <FormField
+                name="password"
+                type="password"
+                control={control}
+                errors={errors}
+                placeholder="Password"
+              />
             </Flex>
 
             <Button
@@ -160,7 +158,7 @@ export default function LoginPage() {
 
         <Flex justify="center" style={{ marginTop: "8px" }}>
           <Text>
-            Dont have an account?{" "}
+            Don't have an account?{" "}
             <Link to="/register" style={{ color: "#1890ff" }}>
               Sign Up
             </Link>
