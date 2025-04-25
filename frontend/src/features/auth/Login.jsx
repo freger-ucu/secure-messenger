@@ -2,18 +2,13 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useState } from "react";
-import { Input, Button, Alert, Typography, message, Flex, Form, ConfigProvider, theme } from "antd";
-import { Link, useNavigate } from "react-router";
+import { Input, Button, Alert, Typography, message, Flex, Form } from "antd";
+import { Link, useNavigate } from "react-router"; // Fix import
 
 const { Title, Text } = Typography;
-const { defaultAlgorithm, darkAlgorithm } = theme;
-
-// Constants
-const API_BASE = import.meta.env.VITE_API_URL;
-const API_URL = `http://${API_BASE}/auth/login/`;
 
 // Validation Schema
-const loginSchema = yup.object().shape({
+const schema = yup.object().shape({
   username: yup.string().required("Username is required"),
   password: yup
     .string()
@@ -21,27 +16,7 @@ const loginSchema = yup.object().shape({
     .required("Password is required"),
 });
 
-// Form Field Component
-const FormField = ({ name, control, errors, type = "text", placeholder }) => (
-  <Form.Item style={{ marginBottom: 0 }}>
-    <Controller
-      name={name}
-      control={control}
-      render={({ field }) => (
-        type === "password" ? (
-          <Input.Password {...field} placeholder={placeholder} size="large" />
-        ) : (
-          <Input {...field} type={type} placeholder={placeholder} size="large" />
-        )
-      )}
-    />
-    {errors[name] && (
-      <Text type="danger" style={{ fontSize: "14px", marginTop: "4px" }}>
-        {errors[name].message}
-      </Text>
-    )}
-  </Form.Item>
-);
+// Helper functions
 const arrayBufferToBase64 = (buffer) => {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 };
@@ -82,22 +57,27 @@ const generateAndSaveKeypair = async (accessToken) => {
   message.success("Public key sent to backend successfully!");
 };
 
-// API call function
-const loginUser = async (data) => {
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message || "Login failed");
-  }
-
-  return result;
-};
+// Reusable form field component
+const FormField = ({ name, control, errors, type = "text", placeholder }) => (
+  <Flex vertical gap="small">
+    <Form.Item style={{ marginBottom: 0 }}>
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          type === "password" ?
+            <Input.Password {...field} placeholder={placeholder} size="large" /> :
+            <Input {...field} type={type} placeholder={placeholder} size="large" />
+        )}
+      />
+      {errors[name] && (
+        <Text type="danger" style={{ fontSize: "14px", marginTop: "4px" }}>
+          {errors[name].message}
+        </Text>
+      )}
+    </Form.Item>
+  </Flex>
+);
 
 export default function LoginPage() {
   const {
@@ -105,14 +85,14 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(loginSchema),
+    resolver: yupResolver(schema),
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (data) => {
+  const onSubmit = async (data) => {
     setLoading(true);
     setError("");
 
@@ -141,6 +121,7 @@ export default function LoginPage() {
 
       // Redirect user to chat page
       navigate("/");
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -160,26 +141,22 @@ export default function LoginPage() {
           Log In
         </Title>
 
-        <form onSubmit={handleSubmit(handleLogin)} style={{ width: "100%" }}>
+        <form onSubmit={handleSubmit(onSubmit)} style={{ width: "100%" }}>
           <Flex vertical gap="large">
-            <Flex vertical gap="small">
-              <FormField
-                name="username"
-                control={control}
-                errors={errors}
-                placeholder="Username"
-              />
-            </Flex>
+            <FormField
+              name="username"
+              control={control}
+              errors={errors}
+              placeholder="Username"
+            />
 
-            <Flex vertical gap="small">
-              <FormField
-                name="password"
-                type="password"
-                control={control}
-                errors={errors}
-                placeholder="Password"
-              />
-            </Flex>
+            <FormField
+              name="password"
+              control={control}
+              errors={errors}
+              type="password"
+              placeholder="Password"
+            />
 
             <Button
               type="primary"
@@ -210,8 +187,6 @@ export default function LoginPage() {
         >
           Restore Account
         </Button>
-
-        хуй
 
         <Flex justify="center" style={{ marginTop: "8px" }}>
           <Text>
