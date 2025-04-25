@@ -13,6 +13,7 @@ apt-get update && apt-get install -y postgresql-client
 py manage.py dbshell
 ````
 
+
 ## Running the Backend and Frontend separately
 
 You need to run the backend and frontend in separate terminals. Follow the steps below to set up and start both.
