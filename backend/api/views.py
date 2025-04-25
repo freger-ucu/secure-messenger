@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from .models import Chat, GroupMessage
+from .models import Chat, GroupMessage, PublicKey
 from .serializers import ChatMessageSerializer, ChatSerializer
 from django.contrib.auth.models import User
 
@@ -14,26 +14,26 @@ class ChatView(APIView):
     def get(self, request):
         # Get the authenticated user
         user = request.user
-        
+
         # Find all chats where the user is either user1 or user2
         chats = Chat.objects.filter(user1=user) | Chat.objects.filter(user2=user)
-        
+
         # Format response
         chat_data = []
         for chat in chats:
             # Get the other user in the chat
             other_user = chat.user2 if chat.user1 == user else chat.user1
-            
+
             # Get latest messages for this chat
             messages = chat.chat_messages.all().order_by('-created')[:1]
             message_data = ChatMessageSerializer(messages, many=True).data
-            
+
             chat_data.append({
                 'id': chat.id,
                 'other_user': other_user.username,
                 'latest_message': message_data
             })
-        
+
         return Response({
             'status': 'success',
             'chats': chat_data
@@ -42,11 +42,11 @@ class ChatView(APIView):
 
 class ChatHistoryView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request, chat_id):
         # Get the authenticated user
         user = request.user
-        
+
         try:
             # Get the chat and ensure the user is a participant
             chat = Chat.objects.get(id=chat_id)
@@ -55,14 +55,14 @@ class ChatHistoryView(APIView):
                     'status': 'error',
                     'message': 'You are not a participant in this chat'
                 }, status=status.HTTP_403_FORBIDDEN)
-                
+
             # Get all messages for this chat
             messages = chat.chat_messages.all().order_by('created')
             message_data = ChatMessageSerializer(messages, many=True).data
-            
+
             # Get the other user
             other_user = chat.user2 if chat.user1 == user else chat.user1
-            
+
             return Response({
                 'status': 'success',
                 'chat_id': chat.id,
@@ -72,7 +72,7 @@ class ChatHistoryView(APIView):
                 'created_at': chat.created_at,
                 'messages': message_data
             })
-            
+
         except Chat.DoesNotExist:
             return Response({
                 'status': 'error',
@@ -82,11 +82,11 @@ class ChatHistoryView(APIView):
 
 class CreateChatView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request):
         # The user2_username is expected in the request data
         serializer = ChatSerializer(data=request.data, context={'request': request})
-        
+
         if serializer.is_valid():
             chat = serializer.save()
             return Response({
@@ -98,8 +98,22 @@ class CreateChatView(APIView):
                     'created_at': chat.created_at
                 }
             }, status=status.HTTP_201_CREATED)
-        
+
         return Response({
             'status': 'error',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UploadPublicKeyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        key_data = request.data.get('public_key')
+        obj, created = PublicKey.objects.update_or_create(
+            user=request.user,
+            defaults={'public_key': key_data}
+        )
+        return Response({
+            'status': 'success',})
+

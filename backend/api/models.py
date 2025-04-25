@@ -87,3 +87,11 @@ class GroupMessage(models.Model):
         #     models.Index(fields=['chat', 'created_at']),
         #     models.Index(fields=['sender']),
         # ]
+
+
+class PublicKey(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    public_key_pem = models.TextField()
+
+    def __str__(self):
+        return f'{self.public_key}'

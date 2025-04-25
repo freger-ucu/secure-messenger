@@ -48,6 +48,8 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
                     'type': 'chat_message',
                     'message': message,
                     'author': self.user.username,
+                    'encrypted_key': data['encrypted_key'],
+                    'iv': data['iv']
                 }
             )
         except json.JSONDecodeError:
@@ -64,6 +66,8 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'message': event['message'],
             'author': event['author'],
+            'encrypted_key': event['encrypted_key'],
+            "iv": event["iv"]
         }))
 
     @database_sync_to_async
