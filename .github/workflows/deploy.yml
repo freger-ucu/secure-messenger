@@ -40,6 +40,7 @@ jobs:
           echo "DB_PASSWORD=$DB_PASSWORD" >> backend/.env
           echo "DB_HOST=$DB_HOST" >> backend/.env
           echo "DB_PORT=$DB_PORT" >> backend/.env
+          echo "API_BASE_URL=API_BASE_URL" >> backend/.env
 
       - name: Create frontend/.env
         run: |
