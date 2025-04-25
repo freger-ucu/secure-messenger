@@ -1,0 +1,58 @@
+name: Fullstack CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create root .env
+        run: |
+          echo "POSTGRES_DB=$POSTGRES_DB" > .env
+          echo "POSTGRES_USER=$POSTGRES_USER" >> .env
+          echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> .env
+          echo "DB_USER=$DB_USER" >> .env
+          echo "DB_PASSWORD=$DB_PASSWORD" >> .env
+          echo "DB_HOST=$DB_HOST" >> .env
+          echo "DB_PORT=$DB_PORT" >> .env
+
+      - name: Create backend/.env
+        run: |
+          echo "DB_NAME=$POSTGRES_DB" > backend/.env
+          echo "DB_USER=$DB_USER" >> backend/.env
+          echo "DB_PASSWORD=$DB_PASSWORD" >> backend/.env
+          echo "DB_HOST=$DB_HOST" >> backend/.env
+          echo "DB_PORT=$DB_PORT" >> backend/.env
+
+      - name: Create frontend/.env
+        run: |
+          echo "VITE_API_URL=$VITE_API_URL" > frontend/.env
+
+      - name: Build and start containers
+        run: docker compose up -d --build
+
+      - name: Wait for services to be ready
+        run: sleep 10
+
+      - name: Run migrations
+        run: docker compose exec backend python manage.py migrate
+
+      - name: Run tests
+        run: docker compose exec backend python manage.py test

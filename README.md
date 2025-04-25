@@ -2,13 +2,13 @@
 
 ## Running with Docker
 ```sh
-docker compose -f FILENAME.yml up --build
+docker compose up --build
 ```
 > for development use docker-compose-dev as FILENAME, for production use docker-compose-prod as FILENAME.
 
 ### Running dbshell in docker (after running docker-compose)
 ```sh
-docker-compose -f docker-compose-dev.yml exec backend bash
+docker-compose exec backend bash
 apt-get update && apt-get install -y postgresql-client
 py manage.py dbshell
 ````
