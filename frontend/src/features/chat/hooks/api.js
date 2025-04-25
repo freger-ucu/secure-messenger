@@ -1,4 +1,5 @@
-const API_BASE = process.env.API_URL;
+
+const API_BASE = import.meta.env.VITE_API_URL;
 const API_BASE_URL = `http://${API_BASE}/api`;
 
 // This function will be used for authenticated requests

@@ -8,7 +8,7 @@ import { Link, useNavigate } from "react-router";
 const { Title, Text } = Typography;
 
 // Constants
-const API_BASE = process.env.API_URL;
+const API_BASE = import.meta.env.VITE_API_URL;
 const API_URL = `http://${API_BASE}/auth/login/`;
 
 // Validation Schema
@@ -78,7 +78,7 @@ export default function LoginPage() {
 
     try {
       const result = await loginUser(data);
-      
+
       // Store auth data
       sessionStorage.setItem("accessToken", result.access);
       sessionStorage.setItem("refreshToken", result.refresh);
