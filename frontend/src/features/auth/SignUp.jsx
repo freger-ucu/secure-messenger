@@ -171,7 +171,7 @@ export default function RegisterPage() {
       sessionStorage.setItem("username", data.username);
 
       // Upload encrypted key pair to server
-      await fetch(`/api/keys/`, {
+      await fetch(`/api/api/keys/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -87,7 +87,7 @@ export default function LoginPage() {
       sessionStorage.setItem("username", data.username);
 
       // Fetch encrypted key pair from server
-      const keysRes = await fetch(`/api/keys/`, {
+      const keysRes = await fetch(`/api/api/keys/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
