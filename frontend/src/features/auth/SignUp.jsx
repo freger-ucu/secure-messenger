@@ -140,7 +140,7 @@ export default function RegisterPage() {
 
     try {
       // Call the backend registration endpoint with the automatically generated seed phrase
-      const response = await fetch(`http://${API_BASE}/auth/register/`, {
+      const response = await fetch(`https://${API_BASE}/auth/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

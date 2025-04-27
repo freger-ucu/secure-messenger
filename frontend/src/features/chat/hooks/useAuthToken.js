@@ -4,7 +4,7 @@ import { message } from "antd";
 
 
 const API_BASE = import.meta.env.VITE_API_URL;
-const API_BASE_URL = `http://${API_BASE}/api`;
+const API_BASE_URL = `https://${API_BASE}/api`;
 // Default token refresh interval (4 minutes to refresh before the typical 5-minute expiration)
 const DEFAULT_REFRESH_INTERVAL = 4 * 60 * 1000;
 

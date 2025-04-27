@@ -9,7 +9,7 @@ const { Title, Text } = Typography;
 
 // Constants
 const API_BASE = import.meta.env.VITE_API_URL;
-const API_URL = `http://${API_BASE}/auth/login/`;
+const API_URL = `https://${API_BASE}/auth/login/`;
 
 // Validation Schema
 const loginSchema = yup.object().shape({
