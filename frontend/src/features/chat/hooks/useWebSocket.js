@@ -1,8 +1,9 @@
 // src/components/Chat/hooks/useWebSocket.js
 import { useEffect, useRef } from "react";
 import { message } from "antd";
+import { decryptMessageAES, decryptMessageRSA } from "../../../utilities/crypto";
 
-export function useWebSocket(chatId, contacts, setContacts) {
+export function useWebSocket(chatId, contacts, setContacts, symKey) {
   const wsRef = useRef(null);
   const accessToken = sessionStorage.getItem("accessToken");
   const currentUsername = sessionStorage.getItem("username");
@@ -30,36 +31,72 @@ export function useWebSocket(chatId, contacts, setContacts) {
     };
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      // Parse incoming JSON data
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (e) {
+        console.error('Invalid WS message format:', event.data);
+        return;
+      }
+      // Support both AES (ct+iv) or legacy RSA (message)
+      const encrypted = data.ct || data.message;
+      const iv = data.iv;
+      const author = data.author;
+      // Skip messages sent by this user
+      if (author === currentUsername) return;
 
-      // Skip messages from self
-      if (data.sender === currentUsername) return;
+      // If using symmetric key, we need IV; else fallback to RSA
+      if (iv && !symKey) {
+        console.warn('Received AES message but symKey not loaded yet');
+        return;
+      }
 
-      const receivedMessage = {
-        id: Date.now(),
-        text: data.message,
-        sender: data.sender,
-        timestamp: new Date(),
-        isFromCurrentUser: false,
-      };
-
-      // Update UI with received message
-      setContacts((prevContacts) =>
-        prevContacts.map((contact) => {
-          if (contact.id === chatId) {
-            return {
-              ...contact,
-              messages: [...(contact.messages || []), receivedMessage],
-              lastMessage: {
-                text: receivedMessage.text,
-                timestamp: new Date(),
-                isRead: true,
-              },
-            };
+      (async () => {
+        let decryptedText;
+        if (iv) {
+          // AES-GCM decryption
+          try {
+            decryptedText = await decryptMessageAES(encrypted, iv, symKey);
+          } catch (err) {
+            console.error('AES-GCM decrypt error:', encrypted, iv, err);
+            decryptedText = encrypted;
           }
-          return contact;
-        })
-      );
+        } else {
+          // RSA fallback (legacy)
+          try {
+            const privJwk = JSON.parse(sessionStorage.getItem('privateKeyJwk'));
+            decryptedText = await decryptMessageRSA(privJwk, encrypted);
+          } catch (err) {
+            console.error('RSA decrypt error:', encrypted, err);
+            decryptedText = encrypted;
+          }
+        }
+        const receivedMessage = {
+          id: Date.now(),
+          text: decryptedText,
+          sender: author,
+          timestamp: new Date(),
+          isFromCurrentUser: false,
+        };
+        // Update UI with decrypted message
+        setContacts((prevContacts) =>
+          prevContacts.map((contact) => {
+            if (contact.id === chatId) {
+              return {
+                ...contact,
+                messages: [...(contact.messages || []), receivedMessage],
+                lastMessage: {
+                  text: receivedMessage.text,
+                  timestamp: new Date(),
+                  isRead: true,
+                },
+              };
+            }
+            return contact;
+          })
+        );
+      })();
     };
 
     ws.onerror = (err) => {
@@ -80,10 +117,7 @@ export function useWebSocket(chatId, contacts, setContacts) {
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(
-        JSON.stringify({
-          message: text,
-          sender: currentUsername,
-        })
+        text
       );
     } else {
       message.error("Connection lost. Please refresh the page.");
@@ -99,7 +133,7 @@ export function useWebSocket(chatId, contacts, setContacts) {
     return () => {
       if (ws) ws.close();
     };
-  }, [accessToken, chatId, currentUsername]);
+  }, [accessToken, chatId, currentUsername, symKey]);
 
   return { sendMessage };
 }
