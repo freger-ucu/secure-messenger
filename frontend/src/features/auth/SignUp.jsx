@@ -208,7 +208,7 @@ export default function RegisterPage() {
   const handleModalClose = () => {
     setRegistrationSuccess(false);
     // After saving seed phrase and keys, navigate to chat
-    navigate("/");
+    navigate("/login");
   };
 
   return (
