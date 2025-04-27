@@ -20,7 +20,7 @@ export function useChatMessages(contacts, setContacts, selectedContactId, symKey
       setError(null);
 
       try {
-        const data = await fetchWithAuth(`/chat/${chatId}/history/`);
+        const data = await fetchWithAuth(`/api/chat/${chatId}/history/`);
 
         if (data.status === "success" && Array.isArray(data.messages)) {
           console.log(

@@ -17,7 +17,7 @@ export function useContacts(selectedContactId, setSelectedContactId) {
     if (!accessToken) return;
 
     try {
-      const data = await fetchWithAuth("/chat/");
+      const data = await fetchWithAuth("/api/chat/");
 
       if (data.status === "success" && Array.isArray(data.chats)) {
         let formattedContacts = data.chats.map((chat) => {

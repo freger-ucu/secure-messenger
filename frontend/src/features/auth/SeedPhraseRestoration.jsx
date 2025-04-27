@@ -102,7 +102,7 @@ export default function SeedPhraseRestoration() {
     try {
       // Make API call to the backend with PUT method as required
       const response = await fetch(
-        `/auth/restore/${username}/`,
+        `/api/auth/restore/${username}/`,
         {
           method: "PUT", // Changed from POST to PUT based on backend requirements
           headers: {

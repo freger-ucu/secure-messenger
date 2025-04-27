@@ -10,7 +10,7 @@ const { Title, Text } = Typography;
 
 // Constants
 const API_BASE = import.meta.env.VITE_API_URL;
-const API_URL = `/auth/login/`;
+const API_URL = `api/auth/login/`;
 
 // Validation Schema
 const loginSchema = yup.object().shape({
@@ -87,7 +87,7 @@ export default function LoginPage() {
       sessionStorage.setItem("username", data.username);
 
       // Fetch encrypted key pair from server
-      const keysRes = await fetch(`://${API_BASE}/api/keys/`, {
+      const keysRes = await fetch(`/api/keys/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
