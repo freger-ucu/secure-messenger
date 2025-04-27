@@ -80,14 +80,14 @@ export default function LoginPage() {
     try {
       // Perform login and store tokens
       const result = await loginUser(data);
-      
+
       const { access, refresh } = result;
       sessionStorage.setItem("accessToken", access);
       sessionStorage.setItem("refreshToken", refresh);
       sessionStorage.setItem("username", data.username);
 
       // Fetch encrypted key pair from server
-      const keysRes = await fetch(`http://${API_BASE}/api/keys/`, {
+      const keysRes = await fetch(`://${API_BASE}/api/keys/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
