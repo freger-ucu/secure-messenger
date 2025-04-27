@@ -19,7 +19,7 @@ export function useChatKey(chatId) {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchWithAuth(`/api/api/chat/${chatId}/key/`);
+        const data = await fetchWithAuth(`/api/chat/${chatId}/key/`);
         // data: { encrypted_key }
         const privJwk = JSON.parse(sessionStorage.getItem('privateKeyJwk'));
         // Decrypt RSA to ArrayBuffer of raw AES key

@@ -51,7 +51,7 @@ export function useContacts(selectedContactId, setSelectedContactId) {
             if (c.lastMessage && c.lastMessage.ct && c.lastMessage.iv) {
               try {
                 // fetch chat key for this chat
-                const keyData = await fetchWithAuth(`/chat/${c.id}/key/`);
+                const keyData = await fetchWithAuth(`api/chat/${c.id}/key/`);
                 const privJwk = JSON.parse(
                   sessionStorage.getItem('privateKeyJwk')
                 );
