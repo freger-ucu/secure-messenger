@@ -4,6 +4,7 @@ import * as yup from "yup";
 import { useState } from "react";
 import { Input, Button, Alert, Typography, message, Flex, Form } from "antd";
 import { Link, useNavigate } from "react-router";
+import { deriveSymKey, decryptPrivateKey } from "../../utilities/crypto";
 
 const { Title, Text } = Typography;
 
@@ -43,7 +44,7 @@ const FormField = ({ name, control, errors, type = "text", placeholder }) => (
 );
 
 // API call function
-const loginUser = async (data) => {
+export const loginUser = async (data) => {
   const response = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -77,12 +78,36 @@ export default function LoginPage() {
     setError("");
 
     try {
+      // Perform login and store tokens
       const result = await loginUser(data);
-
-      // Store auth data
-      sessionStorage.setItem("accessToken", result.access);
-      sessionStorage.setItem("refreshToken", result.refresh);
+      
+      const { access, refresh } = result;
+      sessionStorage.setItem("accessToken", access);
+      sessionStorage.setItem("refreshToken", refresh);
       sessionStorage.setItem("username", data.username);
+
+      // Fetch encrypted key pair from server
+      const keysRes = await fetch(`http://${API_BASE}/api/keys/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      if (!keysRes.ok) throw new Error("Failed to fetch user keys");
+      const keyData = await keysRes.json();
+
+      // Derive symmetric key and decrypt private key
+      const symKey = await deriveSymKey(data.password, keyData.salt);
+      const privJwk = await decryptPrivateKey(
+        keyData.encrypted_private_key,
+        symKey,
+        keyData.iv
+      );
+
+      // Store key pair in sessionStorage
+      sessionStorage.setItem("privateKeyJwk", JSON.stringify(privJwk));
+      sessionStorage.setItem("publicKeyJwk", JSON.stringify(keyData.public_key));
 
       message.success("Login successful!");
       navigate("/");

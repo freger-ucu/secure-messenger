@@ -34,19 +34,26 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
                 raise ValueError("Empty message received")
 
             data = json.loads(text_data)
-            message = data['message']
+            # Expect AES-GCM ciphertext and iv
+            ct = data.get('ct')
+            iv = data.get('iv')
+            if not ct or not iv:
+                raise ValueError("Invalid message format: missing ct or iv")
 
             print("User:", self.user)
             print("Is Anonymous:", self.user.is_anonymous)
-            print("Message:", message)
+            print("Message:", ct)
 
-            await self.save_message(message)
+            # Save AES-encrypted message and iv
+            await self.save_message(ct, iv)
 
+            # Broadcast encrypted message to group
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'chat_message',
-                    'message': message,
+                    'ct': ct,
+                    'iv': iv,
                     'author': self.user.username,
                 }
             )
@@ -61,8 +68,10 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
             await self.close()
 
     async def chat_message(self, event):
+        # Send AES ciphertext and iv to client
         await self.send(text_data=json.dumps({
-            'message': event['message'],
+            'ct': event['ct'],
+            'iv': event['iv'],
             'author': event['author'],
         }))
 
@@ -71,7 +80,7 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
         return Chat.objects.get(id=self.chat_id)
 
     @database_sync_to_async
-    def save_message(self, message):
+    def save_message(self, ct, iv):
         try:
             chat = Chat.objects.get(id=self.chat_id)
         except Chat.DoesNotExist:
@@ -80,8 +89,10 @@ class ChatroomConsumer(AsyncWebsocketConsumer):
         if self.user.is_anonymous:
             raise Exception("Anonymous users cannot send messages")
 
+        # Save ciphertext and iv
         GroupMessage.objects.create(
             group=chat,
             author=self.user,
-            body=message
+            body=ct,
+            iv=iv
         )

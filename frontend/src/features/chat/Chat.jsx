@@ -7,9 +7,11 @@ import ChatInterface from "./ChatInterface";
 import { useContacts } from "./hooks/useContacts";
 import { useChatMessages } from "./hooks/useChatMessages";
 import { useWebSocket } from "./hooks/useWebSocket";
+import { useChatKey } from "./hooks/useChatKey";
 import { useAddChat } from "./hooks/useAddChat";
 import { useAuthToken } from "./hooks/useAuthToken";
 import { withAuthProtection } from "../auth/withAuthProtection";
+import { encryptMessageAES } from "../../utilities/crypto";
 
 function Chat() {
   // Responsive detection
@@ -26,6 +28,7 @@ function Chat() {
   const { accessToken, tokenError } = useAuthToken();
 
   // Custom hooks
+  const { symKey } = useChatKey(selectedContactId);
   const {
     contacts,
     setContacts,
@@ -36,7 +39,7 @@ function Chat() {
     loading: messagesLoading,
     error: messagesError,
     fetchChatMessages,
-  } = useChatMessages(contacts, setContacts, selectedContactId);
+  } = useChatMessages(contacts, setContacts, selectedContactId, symKey);
   const { addingChat, createNewChat } = useAddChat(
     setContacts,
     setSelectedContactId
@@ -46,7 +49,8 @@ function Chat() {
   const { sendMessage } = useWebSocket(
     selectedContactId,
     contacts,
-    setContacts
+    setContacts,
+    symKey
   );
 
   // UI interaction handlers
@@ -117,8 +121,19 @@ function Chat() {
       })
     );
 
-    // Send message via WebSocket
-    sendMessage(text);
+    // Encrypt the message with AES-GCM symmetric key and send
+    (async () => {
+      if (!symKey) {
+        message.error("Encryption not ready. Retry shortly.");
+        return;
+      }
+      try {
+        const { ct, iv } = await encryptMessageAES(text, symKey);
+        sendMessage(JSON.stringify({ ct, iv }));
+      } catch (err) {
+        console.error("AES encryption error:", err);
+      }
+    })();
   };
 
   const toggleSidebar = () => {
@@ -147,10 +162,18 @@ function Chat() {
 
   // Effects
   useEffect(() => {
-    if (selectedContactId) {
+    // Fetch chat history when symmetric key is available
+    if (selectedContactId && symKey) {
       fetchChatMessages(selectedContactId);
     }
-  }, [selectedContactId, fetchChatMessages]);
+    // Periodically refresh chat history every 5 seconds
+    const intervalId = setInterval(() => {
+      if (selectedContactId && symKey) {
+        fetchChatMessages(selectedContactId);
+      }
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [selectedContactId, symKey, fetchChatMessages]);
 
   // Handle token errors
   useEffect(() => {
