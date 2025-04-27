@@ -15,6 +15,8 @@ import {
 } from "antd";
 import { Link, useNavigate } from "react-router";
 import { CopyOutlined } from "@ant-design/icons";
+import { generateKeyPair, randomBase64, deriveSymKey, encryptPrivateKey } from "../../utilities/crypto";
+import { loginUser } from "./Login.jsx";
 
 const { Title, Text } = Typography;
 
@@ -139,7 +141,14 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      // Call the backend registration endpoint with the automatically generated seed phrase
+      // Generate encryption key pair and parameters
+      const { publicKeyJwk, privateKeyJwk } = await generateKeyPair();
+      const salt = randomBase64(16);
+      const iv = randomBase64(12);
+      const symKey = await deriveSymKey(data.password, salt);
+      const encryptedPrivateKey = await encryptPrivateKey(privateKeyJwk, symKey, iv);
+
+      // Register the user account
       const response = await fetch(`http://${API_BASE}/auth/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -147,37 +156,35 @@ export default function RegisterPage() {
           username: data.username,
           password: data.password,
           password2: data.password2,
-          seedphrase: seedPhrase, // Use the automatically generated seed phrase
+          seedphrase: seedPhrase,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.detail || "Registration failed. Please try again.");
+      }
+
+      // Auto-login to retrieve tokens
+      const loginResult = await loginUser({ username: data.username, password: data.password });
+      sessionStorage.setItem("accessToken", loginResult.access);
+      sessionStorage.setItem("refreshToken", loginResult.refresh);
+      sessionStorage.setItem("username", data.username);
+
+      // Upload encrypted key pair to server
+      await fetch(`http://${API_BASE}/api/keys/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${loginResult.access}`,
+        },
+        body: JSON.stringify({
+          public_key: publicKeyJwk,
+          encrypted_private_key: encryptedPrivateKey,
+          salt,
+          iv,
         }),
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Handle different types of error responses
-        if (result.username) {
-          throw new Error(`Username: ${result.username[0]}`);
-        } else if (result.password) {
-          throw new Error(`Password: ${result.password[0]}`);
-        } else if (result.password2) {
-          throw new Error(`Confirm Password: ${result.password2[0]}`);
-        } else if (result.seedphrase) {
-          // Generate a new seed phrase if there was an issue with this one
-          const newSeedPhrase = generateSeedPhrase();
-          setSeedPhrase(newSeedPhrase);
-          throw new Error(`Seed phrase issue. A new one has been generated.`);
-        } else if (result.detail) {
-          throw new Error(result.detail);
-        } else if (result.message) {
-          throw new Error(result.message);
-        } else if (result.non_field_errors) {
-          throw new Error(result.non_field_errors[0]);
-        } else {
-          throw new Error("Registration failed. Please try again.");
-        }
-      }
-
-      // Show success modal with the seed phrase
       setRegistrationSuccess(true);
     } catch (err) {
       setError(err.message);
@@ -200,8 +207,8 @@ export default function RegisterPage() {
 
   const handleModalClose = () => {
     setRegistrationSuccess(false);
-    // Redirect to login page after closing the modal
-    navigate("/login");
+    // After saving seed phrase and keys, navigate to chat
+    navigate("/");
   };
 
   return (

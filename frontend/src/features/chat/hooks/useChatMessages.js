@@ -2,8 +2,9 @@
 import { useState, useCallback } from "react";
 import { message } from "antd";
 import { fetchWithAuth } from "./api";
+import { decryptMessageAES } from "../../../utilities/crypto";
 
-export function useChatMessages(contacts, setContacts, selectedContactId) {
+export function useChatMessages(contacts, setContacts, selectedContactId, symKey) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -14,6 +15,7 @@ export function useChatMessages(contacts, setContacts, selectedContactId) {
     async (chatId, retryCount = 0) => {
       if (!chatId) return;
 
+      if (!symKey) return; // wait for symmetric key
       setLoading(true);
       setError(null);
 
@@ -25,22 +27,30 @@ export function useChatMessages(contacts, setContacts, selectedContactId) {
             `Loaded ${data.messages.length} messages for chat #${chatId}`
           );
 
-          setContacts((prevContacts) =>
-            prevContacts.map((contact) => {
-              if (contact.id === chatId) {
-                return {
-                  ...contact,
-                  messages: data.messages.map((msg) => ({
-                    id: msg.id,
-                    text: msg.body,
-                    sender: msg.author,
-                    timestamp: new Date(msg.timestamp),
-                    isFromCurrentUser: msg.author === currentUsername,
-                  })),
-                };
+          // Decrypt each message using AES-GCM
+          const decrypted = await Promise.all(
+            data.messages.map(async (msg) => {
+              let plaintext = msg.body;
+              if (msg.iv && msg.body) {
+                try {
+                  plaintext = await decryptMessageAES(msg.body, msg.iv, symKey);
+                } catch (err) {
+                  console.error('Error decrypting message', msg.id, err);
+                }
               }
-              return contact;
+              return {
+                id: msg.id,
+                text: plaintext,
+                sender: msg.author,
+                timestamp: new Date(msg.timestamp),
+                isFromCurrentUser: msg.author === currentUsername,
+              };
             })
+          );
+          setContacts((prev) =>
+            prev.map((contact) =>
+              contact.id === chatId ? { ...contact, messages: decrypted } : contact
+            )
           );
         } else {
           throw new Error("Invalid response format from server");
@@ -60,7 +70,7 @@ export function useChatMessages(contacts, setContacts, selectedContactId) {
         setLoading(false);
       }
     },
-    [currentUsername, setContacts]
+    [currentUsername, setContacts, symKey]
   );
 
   return {

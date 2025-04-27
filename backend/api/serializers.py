@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import GroupMessage, Chat
+from .models import GroupMessage, Chat, UserKey, ChatKey
 from django.db import models
 
 
@@ -10,7 +10,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroupMessage
-        fields = ['id', 'body', 'author', 'timestamp', 'group']
+        fields = ['id', 'body', 'iv', 'author', 'timestamp', 'group']
         read_only_fields = ['id', 'author', 'timestamp']
         extra_kwargs = {
             'group': {'write_only': True},
@@ -64,3 +64,17 @@ class ChatSerializer(serializers.ModelSerializer):
         chat = Chat(user1=user1, user2=user2)
         chat.save()
         return chat
+
+
+class UserKeySerializer(serializers.ModelSerializer):
+    public_key = serializers.JSONField()
+
+    class Meta:
+        model = UserKey
+        fields = ['public_key', 'encrypted_private_key', 'salt', 'iv']
+
+
+class ChatKeySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatKey
+        fields = ['encrypted_key', 'iv']
