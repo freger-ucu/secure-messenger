@@ -75,7 +75,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://" + os.environ.get('API_BASE_URL', 'localhost') + ":5173",
+    "http://" + os.environ.get('API_BASE_URL', 'localhost'),
 ]
 
 
