@@ -32,6 +32,9 @@ DB_USER=messenger
 DB_PASSWORD=development
 DB_HOST=db
 DB_PORT=5432
+API_BASE_URL=localhost
+DJANGO_SECRET_KEY=unsafe-dev-secret
+DJANGO_DEBUG=True
 ```
 
 ### frontend/.env
