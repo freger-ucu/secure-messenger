@@ -29,7 +29,11 @@ export default function ChatList({
     <List
       style={{ width: "100%" }}
       itemLayout="horizontal"
-      dataSource={contacts}
+      dataSource={contacts.slice().sort((a, b) => {
+        const aTime = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
+        const bTime = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
+        return bTime - aTime;
+      })}
       renderItem={(contact) => (
         <List.Item
           onClick={() => onSelectContact(contact.id)}
