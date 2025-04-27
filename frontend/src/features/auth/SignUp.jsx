@@ -149,7 +149,7 @@ export default function RegisterPage() {
       const encryptedPrivateKey = await encryptPrivateKey(privateKeyJwk, symKey, iv);
 
       // Register the user account
-      const response = await fetch(`https://${API_BASE}/auth/register/`, {
+      const response = await fetch(`/auth/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -171,7 +171,7 @@ export default function RegisterPage() {
       sessionStorage.setItem("username", data.username);
 
       // Upload encrypted key pair to server
-      await fetch(`https://${API_BASE}/api/keys/`, {
+      await fetch(`/api/keys/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

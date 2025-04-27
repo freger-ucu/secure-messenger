@@ -1,6 +1,6 @@
 
 const API_BASE = import.meta.env.VITE_API_URL;
-const API_BASE_URL = `https://${API_BASE}/api`;
+const API_BASE_URL = `/api`;
 
 // This function will be used for authenticated requests
 export const fetchWithAuth = async (endpoint, options = {}) => {
@@ -79,7 +79,7 @@ export const refreshAuthToken = async () => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh/`, {
+    const response = await fetch(`/auth/refresh/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
