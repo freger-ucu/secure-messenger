@@ -6,10 +6,8 @@ services:
     image: postgres:14
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    environment:
-      POSTGRES_DB: messenger
-      POSTGRES_USER: messenger
-      POSTGRES_PASSWORD: development
+    env_file:
+      - .env
     ports:
       - "5432:5432"
 
@@ -23,11 +21,8 @@ services:
       - "8000:8000"
     depends_on:
       - db
-    environment:
-      - DB_HOST=db
-      - DB_NAME=messenger
-      - DB_USER=messenger
-      - DB_PASSWORD=development
+    env_file:
+      - .env
 
   frontend:
     build:
@@ -37,11 +32,9 @@ services:
       - ./frontend:/app
       - /app/node_modules  # Avoid overwriting node_modules
     ports:
-      - "5173:5173"  # Expose Vite's dev server
+      - "80:80"
     environment:
-      - NODE_ENV=development
-    command: npm run dev -- --host
-
+      - NODE_ENV=production
 
 volumes:
   postgres_data:
