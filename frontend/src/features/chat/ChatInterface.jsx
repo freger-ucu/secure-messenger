@@ -129,12 +129,7 @@ export default function ChatInterface({
           >
             {contact.name}
           </Text>
-          <Flex align="center">
-            <Badge
-              status={contact.isOnline ? "success" : "default"}
-              style={{ marginRight: token.marginXXS }}
-            />
-          </Flex>
+
         </Flex>
       </Flex>
 
