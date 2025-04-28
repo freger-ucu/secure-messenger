@@ -39,16 +39,27 @@ export function useAddChat(setContacts, setSelectedContactId) {
         setModalVisible(false);
         form.resetFields();
       } else {
-        throw new Error(data.message || "User not found or chat cannot be created");
+        // Throw an error with a specific code for better handling
+        throw new Error(data.code || "UNKNOWN_ERROR");
       }
     } catch (err) {
       console.error("Error creating chat:", err);
-      message.error(err.message || "User not found or chat cannot be created. Please check the username and try again.");
+
+      // Map error codes to user-friendly messages
+      const errorMessage = {
+        USER_NOT_FOUND: "The username you entered does not exist.",
+        CHAT_ALREADY_EXISTS: "A chat with this user already exists.",
+        INVALID_USERNAME: "The username is invalid. Please try again.",
+        UNKNOWN_ERROR: "An unknown error occurred. Please try again later.",
+      }[err.message] || "An unexpected error occurred. Please try again.";
+
+      // Display the error message in the form and as a notification
+      message.error(errorMessage);
       form.setFields([
         {
-          name: 'username',
-          errors: [err.message || "User not found or chat cannot be created"]
-        }
+          name: "username",
+          errors: [errorMessage],
+        },
       ]);
     } finally {
       setAddingChat(false);

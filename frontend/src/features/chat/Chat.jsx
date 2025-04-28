@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Flex, message, Button, FloatButton, Modal, Input, Form, theme } from "antd";
+import { Flex, message, Button, FloatButton, Modal, Input, Form, theme, Skeleton } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import ChatNavigation from "./ChatNavigationBar";
 import ChatList from "./ChatList";
@@ -53,8 +53,11 @@ function Chat() {
     symKey
   );
 
+  const [isChangingChat, setIsChangingChat] = useState(false);
+
   // UI interaction handlers
   const handleSelectContact = (contactId) => {
+    setIsChangingChat(true);
     setSelectedContactId(contactId);
     if (isMobile) {
       setSidebarVisible(false);
@@ -78,6 +81,11 @@ function Chat() {
         return contact;
       })
     );
+
+    // Add a timeout to simulate loading
+    setTimeout(() => {
+      setIsChangingChat(false);
+    }, 500);
   };
 
   const handleAddChatModal = {
@@ -86,7 +94,21 @@ function Chat() {
       setModalVisible(false);
       addChatForm.resetFields();
     },
-    submit: (values) => createNewChat(values, addChatForm, setModalVisible),
+    submit: async (values) => {
+      try {
+        await createNewChat(values, addChatForm, setModalVisible);
+      } catch (error) {
+        // Map error codes to user-friendly messages
+        const errorMessage = {
+          "USER_NOT_FOUND": "The username you entered does not exist.",
+          "CHAT_ALREADY_EXISTS": "A chat with this user already exists.",
+          "INVALID_USERNAME": "The username is invalid. Please try again.",
+          "UNKNOWN_ERROR": "An unknown error occurred. Please try again later.",
+        }[error.code] || "An unexpected error occurred. Please try again.";
+
+        message.error(errorMessage);
+      }
+    },
   };
 
   const handleSendMessage = (text) => {
@@ -160,20 +182,26 @@ function Chat() {
     return () => window.removeEventListener("resize", handleResize);
   }, [sidebarVisible]);
 
-  // Effects
+  // Ensure the chat list is shown on mobile when the user logs in
   useEffect(() => {
-    // Fetch chat history when symmetric key is available
+    if (isMobile) {
+      setSelectedContactId(null);
+      setSidebarVisible(true);
+    }
+  }, [isMobile]);
+
+// Fetch chat history when symmetric key is available
+useEffect(() => {
+  if (selectedContactId && symKey) {
+    fetchChatMessages(selectedContactId);
+  }
+  const intervalId = setInterval(() => {
     if (selectedContactId && symKey) {
       fetchChatMessages(selectedContactId);
     }
-    // Periodically refresh chat history every 5 seconds
-    const intervalId = setInterval(() => {
-      if (selectedContactId && symKey) {
-        fetchChatMessages(selectedContactId);
-      }
-    }, 5000);
-    return () => clearInterval(intervalId);
-  }, [selectedContactId, symKey, fetchChatMessages]);
+  }, 5000);
+  return () => clearInterval(intervalId);
+}, [selectedContactId, symKey, fetchChatMessages]);
 
   // Handle token errors
   useEffect(() => {
@@ -227,19 +255,23 @@ function Chat() {
   );
 
   // The Add Chat floating button - now it's outside of conditional rendering blocks
-  const renderFloatingButton = () => (
-    <FloatButton
-      type="primary"
-      icon={<PlusOutlined />}
-      onClick={handleAddChatModal.open}
-      style={{
-        position: "fixed",
-        bottom: 24,
-        right: 24,
-        zIndex: 1000,
-      }}
-    />
-  );
+  const renderFloatingButton = () => {
+    if (!isMobile) return null; // Only show the button on mobile
+    if (!sidebarVisible) return null; // Only show the button when the chat list is visible
+    return (
+      <FloatButton
+        type="primary"
+        icon={<PlusOutlined />}
+        onClick={handleAddChatModal.open}
+        style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          zIndex: 1000,
+        }}
+      />
+    );
+  };
 
   if (loading) {
     return (
@@ -414,15 +446,43 @@ function Chat() {
           }}
         >
           {selectedContact ? (
-            <ChatInterface
-              contact={selectedContact}
-              messages={selectedContact.messages || []}
-              onSendMessage={handleSendMessage}
-              loading={messagesLoading}
-              error={messagesError}
-              isMobile={isMobile}
-              onBack={handleBackToList}
-            />
+            isChangingChat ? (
+              <Flex 
+                vertical 
+                style={{ 
+                  width: "100%", 
+                  height: "100%",
+                  padding: token.padding,
+                  backgroundColor: token.colorBgContainer 
+                }}
+              >
+                <Skeleton.Input
+                  active
+                  size="large"
+                  block
+                  style={{ marginBottom: token.margin }}
+                />
+                <Skeleton.Input
+                  active
+                  size="small"
+                  style={{ width: "20%", marginBottom: token.marginLG }}
+                />
+                <Skeleton
+                  active
+                  paragraph={{ rows: 6, width: ['60%', '80%', '40%', '70%', '50%', '90%'] }}
+                />
+              </Flex>
+            ) : (
+              <ChatInterface
+                contact={selectedContact}
+                messages={selectedContact.messages || []}
+                onSendMessage={handleSendMessage}
+                loading={messagesLoading}
+                error={messagesError}
+                isMobile={isMobile}
+                onBack={handleBackToList}
+              />
+            )
           ) : (
             <Flex justify="center" align="center" style={{ width: "100%" }}>
               {loading

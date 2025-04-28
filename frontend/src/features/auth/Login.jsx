@@ -112,7 +112,16 @@ export default function LoginPage() {
       message.success("Login successful!");
       navigate("/");
     } catch (err) {
-      setError(err.message);
+      console.error("Login error:", err);
+      const errorMessage = {
+        "Invalid credentials": "Incorrect username or password. Please try again.",
+        "User not found": "This account doesn't exist. Please check your username or sign up.",
+        "Account locked": "Your account has been locked. Please reset your password or contact support.",
+        "Network Error": "Unable to connect to the server. Please check your internet connection.",
+      }[err.message] || "Login failed. Please try again later.";
+      
+      setError(errorMessage);
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
