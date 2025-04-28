@@ -255,30 +255,32 @@ function Chat() {
                 width: "100%",
                 height: "100%",
                 overflow: "auto",
+                position: "relative"
               }}
             >
               <Flex
-                justify="space-between"
-                align="center"
+                vertical
                 style={{
-                  padding: "8px 16px",
-                  borderBottom: `1px solid ${token.colorBorder}`,
+                  height: "100%"
                 }}
               >
-                <h3 style={{ margin: 0 }}>Chats</h3>
-                <FloatButton
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleAddChatModal.open}
-                  size="small"
+                <ChatList
+                  contacts={contacts}
+                  selectedContactId={selectedContactId}
+                  onSelectContact={handleSelectContact}
+                  loading={loading}
+                  isMobile={isMobile}
                 />
               </Flex>
-              <ChatList
-                contacts={contacts}
-                selectedContactId={selectedContactId}
-                onSelectContact={handleSelectContact}
-                loading={loading}
-                isMobile={isMobile}
+              <FloatButton
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAddChatModal.open}
+                style={{
+                  position: "fixed",
+                  bottom: 24,
+                  right: 24,
+                }}
               />
             </Flex>
           ) : (

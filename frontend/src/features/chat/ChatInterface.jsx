@@ -95,6 +95,8 @@ export default function ChatInterface({
         position: "relative",
         overflow: "hidden",
         backgroundColor: token.colorBgLayout,
+        display: "flex",
+        flexDirection: "column"
       }}
     >
       {/* Header */}
@@ -104,6 +106,7 @@ export default function ChatInterface({
           padding: isMobile ? "8px 12px" : token.padding,
           borderBottom: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
+          flexShrink: 0 // Prevent header from shrinking
         }}
       >
         {isMobile && (
@@ -140,9 +143,9 @@ export default function ChatInterface({
           flex: 1,
           padding: isMobile ? "8px" : token.padding,
           overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
+          overflowX: "hidden",
           backgroundColor: token.colorBgContainer,
+          minHeight: 0 // Important for proper flex behavior
         }}
       >
         <List
@@ -229,6 +232,7 @@ export default function ChatInterface({
           padding: isMobile ? "8px" : token.padding,
           borderTop: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
+          flexShrink: 0 // Prevent input from shrinking
         }}
       >
         <Input
