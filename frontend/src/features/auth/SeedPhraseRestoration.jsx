@@ -203,7 +203,7 @@ export default function SeedPhraseRestoration() {
           >
             New Password
           </label>
-          <Input
+          <Input.Password
             id="newPassword"
             type="password"
             value={newPassword}
@@ -222,7 +222,7 @@ export default function SeedPhraseRestoration() {
           >
             Confirm Password
           </label>
-          <Input
+          <Input.Password
             id="confirmPassword"
             type="password"
             value={confirmPassword}
