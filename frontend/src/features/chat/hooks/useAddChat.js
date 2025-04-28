@@ -39,11 +39,17 @@ export function useAddChat(setContacts, setSelectedContactId) {
         setModalVisible(false);
         form.resetFields();
       } else {
-        throw new Error(data.message || "Failed to create chat");
+        throw new Error(data.message || "User not found or chat cannot be created");
       }
     } catch (err) {
       console.error("Error creating chat:", err);
-      message.error(err.message || "Failed to create chat. Please try again.");
+      message.error(err.message || "User not found or chat cannot be created. Please check the username and try again.");
+      form.setFields([
+        {
+          name: 'username',
+          errors: [err.message || "User not found or chat cannot be created"]
+        }
+      ]);
     } finally {
       setAddingChat(false);
     }
