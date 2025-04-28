@@ -196,6 +196,11 @@ export default function ChatInterface({
                       color: isCurrentUser ? token.colorWhite : token.colorText,
                       boxShadow: token.boxShadowTertiary,
                       fontSize: isMobile ? "14px" : "inherit",
+                      wordWrap: "break-word",
+                      wordBreak: "break-word",
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "break-word",
+                      maxWidth: "100%"
                     }}
                   >
                     {msg.text}
