@@ -1,4 +1,4 @@
-import { List, Badge, Spin, theme, Avatar, Flex } from "antd";
+import { List, Badge, Spin, theme, Avatar, Flex, Empty } from "antd";
 
 export default function ChatList({
   contacts,
@@ -19,9 +19,12 @@ export default function ChatList({
 
   if (contacts.length === 0) {
     return (
-      <div style={{ padding: "20px", textAlign: "center", width: "100%" }}>
-        No chats available
-      </div>
+      <Empty
+        description="No chats available. Add a new chat to start messaging!"
+        style={{ 
+          padding: "40px 20px",
+        }}
+      />
     );
   }
 

@@ -95,6 +95,8 @@ export default function ChatInterface({
         position: "relative",
         overflow: "hidden",
         backgroundColor: token.colorBgLayout,
+        display: "flex",
+        flexDirection: "column"
       }}
     >
       {/* Header */}
@@ -104,6 +106,7 @@ export default function ChatInterface({
           padding: isMobile ? "8px 12px" : token.padding,
           borderBottom: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
+          flexShrink: 0 // Prevent header from shrinking
         }}
       >
         {isMobile && (
@@ -129,12 +132,7 @@ export default function ChatInterface({
           >
             {contact.name}
           </Text>
-          <Flex align="center">
-            <Badge
-              status={contact.isOnline ? "success" : "default"}
-              style={{ marginRight: token.marginXXS }}
-            />
-          </Flex>
+
         </Flex>
       </Flex>
 
@@ -145,9 +143,9 @@ export default function ChatInterface({
           flex: 1,
           padding: isMobile ? "8px" : token.padding,
           overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
+          overflowX: "hidden",
           backgroundColor: token.colorBgContainer,
+          minHeight: 0 // Important for proper flex behavior
         }}
       >
         <List
@@ -201,6 +199,11 @@ export default function ChatInterface({
                       color: isCurrentUser ? token.colorWhite : token.colorText,
                       boxShadow: token.boxShadowTertiary,
                       fontSize: isMobile ? "14px" : "inherit",
+                      wordWrap: "break-word",
+                      wordBreak: "break-word",
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "break-word",
+                      maxWidth: "100%"
                     }}
                   >
                     {msg.text}
@@ -229,6 +232,7 @@ export default function ChatInterface({
           padding: isMobile ? "8px" : token.padding,
           borderTop: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
+          flexShrink: 0 // Prevent input from shrinking
         }}
       >
         <Input
