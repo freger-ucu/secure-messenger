@@ -189,6 +189,58 @@ function Chat() {
   const loading = contactsLoading;
   const error = contactsError || messagesError || tokenError;
 
+  // Add Chat Modal
+  const renderAddChatModal = () => (
+    <Modal
+      title="Create New Chat"
+      open={modalVisible}
+      onCancel={handleAddChatModal.close}
+      footer={null}
+    >
+      <Form
+        form={addChatForm}
+        layout="vertical"
+        onFinish={handleAddChatModal.submit}
+      >
+        <Form.Item
+          name="username"
+          label="Username"
+          rules={[
+            { required: true, message: "Please enter a username" },
+            { min: 3, message: "Username must be at least 3 characters" },
+          ]}
+        >
+          <Input placeholder="Enter username to chat with" />
+        </Form.Item>
+        <Form.Item>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={addingChat}
+            block
+          >
+            Create Chat
+          </Button>
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+
+  // The Add Chat floating button - now it's outside of conditional rendering blocks
+  const renderFloatingButton = () => (
+    <FloatButton
+      type="primary"
+      icon={<PlusOutlined />}
+      onClick={handleAddChatModal.open}
+      style={{
+        position: "fixed",
+        bottom: 24,
+        right: 24,
+        zIndex: 1000,
+      }}
+    />
+  );
+
   if (loading) {
     return (
       <Flex
@@ -201,6 +253,7 @@ function Chat() {
         }}
       >
         <p>Loading messages...</p>
+        {renderFloatingButton()}
       </Flex>
     );
   }
@@ -228,6 +281,7 @@ function Chat() {
         >
           Retry
         </Button>
+        {renderFloatingButton()}
       </Flex>
     );
   }
@@ -272,16 +326,6 @@ function Chat() {
                   isMobile={isMobile}
                 />
               </Flex>
-              <FloatButton
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleAddChatModal.open}
-                style={{
-                  position: "fixed",
-                  bottom: 24,
-                  right: 24,
-                }}
-              />
             </Flex>
           ) : (
             <Flex
@@ -304,40 +348,9 @@ function Chat() {
           )}
         </Flex>
 
-        {/* Add Chat Modal */}
-        <Modal
-          title="Create New Chat"
-          open={modalVisible}
-          onCancel={handleAddChatModal.close}
-          footer={null}
-        >
-          <Form
-            form={addChatForm}
-            layout="vertical"
-            onFinish={handleAddChatModal.submit}
-          >
-            <Form.Item
-              name="username"
-              label="Username"
-              rules={[
-                { required: true, message: "Please enter a username" },
-                { min: 3, message: "Username must be at least 3 characters" },
-              ]}
-            >
-              <Input placeholder="Enter username to chat with" />
-            </Form.Item>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={addingChat}
-                block
-              >
-                Create Chat
-              </Button>
-            </Form.Item>
-          </Form>
-        </Modal>
+        {/* Always render the floating button, regardless of sidebar state */}
+        {renderFloatingButton()}
+        {renderAddChatModal()}
       </Flex>
     );
   }
@@ -420,35 +433,9 @@ function Chat() {
         </Flex>
       </Flex>
 
-      {/* Add Chat Modal */}
-      <Modal
-        title="Create New Chat"
-        open={modalVisible}
-        onCancel={handleAddChatModal.close}
-        footer={null}
-      >
-        <Form
-          form={addChatForm}
-          layout="vertical"
-          onFinish={handleAddChatModal.submit}
-        >
-          <Form.Item
-            name="username"
-            label="Username"
-            rules={[
-              { required: true, message: "Please enter a username" },
-              { min: 3, message: "Username must be at least 3 characters" },
-            ]}
-          >
-            <Input placeholder="Enter username to chat with" />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={addingChat} block>
-              Create Chat
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
+      {/* Always render the floating button for desktop too */}
+      {renderFloatingButton()}
+      {renderAddChatModal()}
     </Flex>
   );
 }
