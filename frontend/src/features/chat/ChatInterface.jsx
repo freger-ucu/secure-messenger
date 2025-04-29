@@ -203,7 +203,7 @@ export default function ChatInterface({
                       fontSize: isMobile ? "14px" : "inherit",
                     }}
                   >
-                    {msg.text}
+                    {msg.text && /^[A-Za-z0-9+/=]{20,}$/.test(msg.text) ? "....." : msg.text}
                   </div>
                   <Text
                     type="secondary"
