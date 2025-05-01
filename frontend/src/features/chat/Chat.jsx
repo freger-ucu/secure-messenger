@@ -367,15 +367,49 @@ useEffect(() => {
                 overflow: "hidden",
               }}
             >
-              <ChatInterface
-                contact={selectedContact}
-                messages={selectedContact?.messages || []}
-                onSendMessage={handleSendMessage}
-                loading={messagesLoading}
-                error={messagesError}
-                isMobile={isMobile}
-                onBack={handleBackToList}
-              />
+              {selectedContact ? (
+                isChangingChat ? (
+                  <Flex 
+                    vertical 
+                    style={{ 
+                      width: "100%", 
+                      height: "100%",
+                      padding: token.padding,
+                      backgroundColor: token.colorBgContainer 
+                    }}
+                  >
+                    <Skeleton.Input
+                      active
+                      size="large"
+                      block
+                      style={{ marginBottom: token.margin }}
+                    />
+                    <Skeleton.Input
+                      active
+                      size="small"
+                      style={{ width: "20%", marginBottom: token.marginLG }}
+                    />
+                    <Skeleton
+                      active
+                      paragraph={{ rows: 6, width: ['60%', '80%', '40%', '70%', '50%', '90%'] }}
+                    />
+                  </Flex>
+                ) : (
+                  <ChatInterface
+                    contact={selectedContact}
+                    messages={selectedContact?.messages || []}
+                    onSendMessage={handleSendMessage}
+                    loading={messagesLoading}
+                    error={messagesError}
+                    isMobile={isMobile}
+                    onBack={handleBackToList}
+                  />
+                )
+              ) : (
+                <Flex justify="center" align="center" style={{ width: "100%" }}>
+                  Select a chat to start messaging
+                </Flex>
+              )}
             </Flex>
           )}
         </Flex>
