@@ -93,20 +93,23 @@ export default function ChatInterface({
         width: "100%",
         height: "100%",
         position: "relative",
-        overflow: "hidden",
         backgroundColor: token.colorBgLayout,
         display: "flex",
-        flexDirection: "column"
+        flexDirection: "column",
+        overflow: "hidden" // Changed from previous overflow setting
       }}
     >
-      {/* Header */}
+      {/* Header - Now fixed */}
       <Flex
         align="center"
         style={{
           padding: isMobile ? "8px 12px" : token.padding,
           borderBottom: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
-          flexShrink: 0 // Prevent header from shrinking
+          position: isMobile ? "sticky" : "relative",
+          top: 0,
+          zIndex: 10,
+          width: "100%"
         }}
       >
         {isMobile && (
@@ -136,7 +139,7 @@ export default function ChatInterface({
         </Flex>
       </Flex>
 
-      {/* Messages */}
+      {/* Messages - Only this section should scroll */}
       <Flex
         vertical
         style={{
@@ -145,7 +148,8 @@ export default function ChatInterface({
           overflowY: "auto",
           overflowX: "hidden",
           backgroundColor: token.colorBgContainer,
-          minHeight: 0 // Important for proper flex behavior
+          height: "calc(100% - 120px)", // Adjust based on header and input heights
+          position: "relative"
         }}
       >
         <List
@@ -226,13 +230,16 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </Flex>
 
-      {/* Input */}
+      {/* Input - Now fixed */}
       <Flex
         style={{
           padding: isMobile ? "8px" : token.padding,
           borderTop: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
-          flexShrink: 0 // Prevent input from shrinking
+          position: isMobile ? "sticky" : "relative",
+          bottom: 0,
+          width: "100%",
+          zIndex: 10
         }}
       >
         <Input
