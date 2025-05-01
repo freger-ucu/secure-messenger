@@ -9,7 +9,7 @@ import {
   Flex,
   theme,
 } from "antd";
-import { SendOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { SendOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -96,50 +96,39 @@ export default function ChatInterface({
         backgroundColor: token.colorBgLayout,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden" // Changed from previous overflow setting
+        overflow: "hidden",
       }}
     >
-      {/* Header - Now fixed */}
-      <Flex
-        align="center"
-        style={{
-          padding: isMobile ? "8px 12px" : token.padding,
-          borderBottom: `1px solid ${token.colorBorder}`,
-          backgroundColor: token.colorBgContainer,
-          position: isMobile ? "sticky" : "relative",
-          top: 0,
-          zIndex: 10,
-          width: "100%"
-        }}
-      >
-        {isMobile && (
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={onBack}
-            style={{ marginRight: 8 }}
-            aria-label="Back to chats"
-          />
-        )}
-        <Avatar
-          size={isMobile ? 32 : 40}
-          style={{ marginRight: token.margin }}
-          src={contact.avatar}
+      {/* Header - Render only on desktop */}
+      {!isMobile && (
+        <Flex
+          align="center"
+          style={{
+            padding: token.padding,
+            borderBottom: `1px solid ${token.colorBorder}`,
+            backgroundColor: token.colorBgContainer,
+            position: "relative",
+            top: 0,
+            zIndex: 10,
+            width: "100%",
+          }}
         >
-          {contact.name?.charAt(0).toUpperCase()}
-        </Avatar>
-        <Flex vertical style={{ flex: 1 }}>
-          <Text
-            strong
-            style={{ fontSize: isMobile ? token.fontSize : token.fontSizeLG }}
+          <Avatar
+            size={40}
+            style={{ marginRight: token.margin }}
+            src={contact.avatar}
           >
-            {contact.name}
-          </Text>
-
+            {contact.name?.charAt(0).toUpperCase()}
+          </Avatar>
+          <Flex vertical style={{ flex: 1 }}>
+            <Text strong style={{ fontSize: token.fontSizeLG }}>
+              {contact.name}
+            </Text>
+          </Flex>
         </Flex>
-      </Flex>
+      )}
 
-      {/* Messages - Only this section should scroll */}
+      {/* Messages */}
       <Flex
         vertical
         style={{
@@ -148,8 +137,6 @@ export default function ChatInterface({
           overflowY: "auto",
           overflowX: "hidden",
           backgroundColor: token.colorBgContainer,
-          height: "calc(100% - 120px)", // Adjust based on header and input heights
-          position: "relative"
         }}
       >
         <List
@@ -207,7 +194,7 @@ export default function ChatInterface({
                       wordBreak: "break-word",
                       whiteSpace: "pre-wrap",
                       overflowWrap: "break-word",
-                      maxWidth: "100%"
+                      maxWidth: "100%",
                     }}
                   >
                     {msg.text}
@@ -230,16 +217,16 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </Flex>
 
-      {/* Input - Now fixed */}
+      {/* Input */}
       <Flex
         style={{
           padding: isMobile ? "8px" : token.padding,
           borderTop: `1px solid ${token.colorBorder}`,
           backgroundColor: token.colorBgContainer,
-          position: isMobile ? "sticky" : "relative",
+          position: "relative",
           bottom: 0,
           width: "100%",
-          zIndex: 10
+          zIndex: 10,
         }}
       >
         <Input

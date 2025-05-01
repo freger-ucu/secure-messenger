@@ -2,7 +2,7 @@ import { clearTokens } from "../../utilities/auth";
 import { useNavigate } from "react-router";
 import { Flex, Button, Typography, theme, Avatar } from "antd";
 import { useEffect, useState } from "react";
-import { UserOutlined, LogoutOutlined } from "@ant-design/icons";
+import { UserOutlined, LogoutOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 
 export default function ChatNavigation({ toggleSidebar, isMobile }) {
   const navigate = useNavigate();
@@ -37,22 +37,30 @@ export default function ChatNavigation({ toggleSidebar, isMobile }) {
       }}
     >
       <Flex align="center" gap={12}>
+        {isMobile && (
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={toggleSidebar}
+            style={{ marginRight: 8 }}
+          />
+        )}
         <Typography.Title level={isMobile ? 4 : 3} style={{ margin: 0, color: token.colorText }}>
           Chat
         </Typography.Title>
       </Flex>
       <Flex align="center" gap={16}>
         <Flex align="center" gap={2}>
-          <Avatar 
-            icon={<UserOutlined />} 
-            style={{ 
+          <Avatar
+            icon={<UserOutlined />}
+            style={{
               backgroundColor: token.colorBgContainer,
-              verticalAlign: 'middle' 
+              verticalAlign: 'middle'
             }}
             size={isMobile ? "small" : "default"}
           />
-          <Typography.Text 
-            style={{ 
+          <Typography.Text
+            style={{
               fontSize: isMobile ? "12px" : "14px",
               color: token.colorText,
               fontWeight: "500"
@@ -61,8 +69,8 @@ export default function ChatNavigation({ toggleSidebar, isMobile }) {
             {username}
           </Typography.Text>
         </Flex>
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           icon={<LogoutOutlined />}
           onClick={handleLogout}
           size={isMobile ? "small" : "middle"}
