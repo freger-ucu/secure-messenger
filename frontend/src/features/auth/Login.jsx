@@ -214,14 +214,6 @@ export default function LoginPage() {
           </Flex>
         </form>
 
-        <Button
-          type="dashed"
-          size="large"
-          block
-          onClick={() => navigate("/restore")}
-        >
-          Restore Account
-        </Button>
 
         <Flex justify="center" style={{ marginTop: "8px" }}>
           <Text>
