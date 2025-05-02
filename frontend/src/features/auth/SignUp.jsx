@@ -44,56 +44,13 @@ const schema = yup.object().shape({
 // Function to generate a random 6-word seed phrase
 const generateSeedPhrase = () => {
   const wordList = [
-    "apple",
-    "beach",
-    "cloud",
-    "dance",
-    "earth",
-    "field",
-    "glass",
-    "house",
-    "image",
-    "juice",
-    "kite",
-    "light",
-    "music",
-    "north",
-    "ocean",
-    "paper",
-    "queen",
-    "river",
-    "stone",
-    "table",
-    "unity",
-    "voice",
-    "water",
-    "xenon",
-    "yacht",
-    "zebra",
-    "above",
-    "below",
-    "circle",
-    "design",
-    "eagle",
-    "flame",
-    "garden",
-    "hidden",
-    "island",
-    "jungle",
-    "kingdom",
-    "level",
-    "mountain",
-    "number",
-    "orange",
-    "planet",
-    "quiet",
-    "record",
-    "sunset",
-    "timber",
-    "unique",
-    "valley",
-    "window",
-    "xylophone",
+    "apple", "beach", "cloud", "dance", "earth", "field", "glass", "house",
+    "image", "juice", "kite", "light", "music", "north", "ocean", "paper",
+    "queen", "river", "stone", "table", "unity", "voice", "water", "xenon",
+    "yacht", "zebra", "above", "below", "circle", "design", "eagle", "flame",
+    "garden", "hidden", "island", "jungle", "kingdom", "level", "mountain", 
+    "number", "orange", "planet", "quiet", "record", "sunset", "timber",
+    "unique", "valley", "window", "xylophone",
   ];
 
   const seedPhrase = [];
@@ -119,7 +76,6 @@ export default function RegisterPage() {
     },
   });
 
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
@@ -133,8 +89,6 @@ export default function RegisterPage() {
   useEffect(() => {
     setSeedPhrase(generateSeedPhrase());
   }, []);
-
-
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -159,9 +113,20 @@ export default function RegisterPage() {
           seedphrase: seedPhrase,
         }),
       });
+      
       const result = await response.json();
+      
       if (!response.ok) {
-        throw new Error(result.detail || "Registration failed. Please try again.");
+        // Handle specific error messages from the API
+        if (result.username) {
+          throw new Error(result.username[0]);
+        } else if (result.password) {
+          throw new Error(result.password[0]);
+        } else if (result.detail) {
+          throw new Error(result.detail);
+        } else {
+          throw new Error("Registration failed. Please try again.");
+        }
       }
 
       // Auto-login to retrieve tokens
@@ -187,7 +152,22 @@ export default function RegisterPage() {
 
       setRegistrationSuccess(true);
     } catch (err) {
-      setError(err.message);
+      console.error("Registration error:", err);
+      
+      const errorMessageMap = {
+        "No active account found with the given credentials": "Incorrect username or password. Please try again.",
+        "User not found": "This account doesn't exist. Please check your username or sign up.",
+        "Account is locked": "Your account has been locked. Please reset your password or contact support.",
+        "Network Error": "Unable to connect to the server. Please check your internet connection.",
+        "Decryption Error": "Failed to decrypt your keys. Please ensure your password is correct.",
+        "Key Retrieval Error": "Couldn't retrieve your security keys. Please try again or contact support.",
+        "Account is inactive": "Your account is inactive. Please check your email to activate your account.",
+        "Too many login attempts": "Too many failed login attempts. Please try again later or reset your password.",
+        "Server Error": "Our servers are experiencing issues. Please try again later."
+      };
+      
+      const errorMessage = errorMessageMap[err.message] || err.message;
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -304,6 +284,16 @@ export default function RegisterPage() {
               </Form.Item>
             </Flex>
 
+            {/* Error Message */}
+            {error && (
+              <Alert
+                message={error}
+                type="error"
+                showIcon
+                style={{ marginBottom: "16px" }}
+              />
+            )}
+
             {/* Submit Button */}
             <Button
               type="primary"
@@ -314,9 +304,6 @@ export default function RegisterPage() {
             >
               Register
             </Button>
-
-            {/* Error Message */}
-            {error && <Alert message={error} type="error" showIcon />}
 
             {/* Link to Login Page */}
             <Flex justify="center" style={{ paddingTop: "12px" }}>

@@ -43,21 +43,30 @@ const FormField = ({ name, control, errors, type = "text", placeholder }) => (
   </Form.Item>
 );
 
-// API call function
+// API call function with proper error extraction
 export const loginUser = async (data) => {
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-  const result = await response.json();
+    const result = await response.json();
 
-  if (!response.ok) {
-    throw new Error(result.message || "Login failed");
+    if (!response.ok) {
+      // Extract the error message from the 'detail' property
+      const errorDetail = result.detail || "Login failed";      
+      throw new Error(errorDetail);
+    }
+
+    return result;
+  } catch (error) {
+    if (error.name === "TypeError" && error.message.includes("Failed to fetch")) {
+      throw new Error("Network Error");
+    }
+    throw error;
   }
-
-  return result;
 };
 
 export default function LoginPage() {
@@ -86,39 +95,63 @@ export default function LoginPage() {
       sessionStorage.setItem("refreshToken", refresh);
       sessionStorage.setItem("username", data.username);
 
-      // Fetch encrypted key pair from server
-      const keysRes = await fetch(`http://${API_BASE}/api/keys/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
-      if (!keysRes.ok) throw new Error("Failed to fetch user keys");
-      const keyData = await keysRes.json();
+      try {
+        // Fetch encrypted key pair from server
+        const keysRes = await fetch(`http://${API_BASE}/api/keys/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        });
+        
+        if (!keysRes.ok) {
+          const keyError = await keysRes.json();
+          throw new Error(keyError.detail || "Failed to fetch user keys");
+        }
+        
+        const keyData = await keysRes.json();
 
-      // Derive symmetric key and decrypt private key
-      const symKey = await deriveSymKey(data.password, keyData.salt);
-      const privJwk = await decryptPrivateKey(
-        keyData.encrypted_private_key,
-        symKey,
-        keyData.iv
-      );
+        // Derive symmetric key and decrypt private key
+        try {
+          const symKey = await deriveSymKey(data.password, keyData.salt);
+          const privJwk = await decryptPrivateKey(
+            keyData.encrypted_private_key,
+            symKey,
+            keyData.iv
+          );
 
-      // Store key pair in sessionStorage
-      sessionStorage.setItem("privateKeyJwk", JSON.stringify(privJwk));
-      sessionStorage.setItem("publicKeyJwk", JSON.stringify(keyData.public_key));
+          // Store key pair in sessionStorage
+          sessionStorage.setItem("privateKeyJwk", JSON.stringify(privJwk));
+          sessionStorage.setItem("publicKeyJwk", JSON.stringify(keyData.public_key));
+        } catch (cryptoError) {
+          console.error("Crypto error:", cryptoError);
+          throw new Error("Decryption Error");
+        }
+      } catch (keyError) {
+        console.error("Key fetching error:", keyError);
+        throw new Error(keyError.message || "Key Retrieval Error");
+      }
 
       message.success("Login successful!");
       navigate("/");
     } catch (err) {
       console.error("Login error:", err);
-      const errorMessage = {
-        "Invalid credentials": "Incorrect username or password. Please try again.",
+      
+      // Error message mapping using the correct error messages from the API
+      const errorMessageMap = {
+        "No active account found with the given credentials": "Incorrect username or password. Please try again.",
         "User not found": "This account doesn't exist. Please check your username or sign up.",
-        "Account locked": "Your account has been locked. Please reset your password or contact support.",
+        "Account is locked": "Your account has been locked. Please reset your password or contact support.",
         "Network Error": "Unable to connect to the server. Please check your internet connection.",
-      }[err.message] || "Login failed. Please try again later.";
+        "Decryption Error": "Failed to decrypt your keys. Please ensure your password is correct.",
+        "Key Retrieval Error": "Couldn't retrieve your security keys. Please try again or contact support.",
+        "Account is inactive": "Your account is inactive. Please check your email to activate your account.",
+        "Too many login attempts": "Too many failed login attempts. Please try again later or reset your password.",
+        "Server Error": "Our servers are experiencing issues. Please try again later."
+      };
+      
+      const errorMessage = errorMessageMap[err.message] || `Login failed: ${err.message}`;
       
       setError(errorMessage);
       message.error(errorMessage);
