@@ -4,7 +4,7 @@ import { message } from "antd";
 
 
 const API_BASE = import.meta.env.VITE_API_URL;
-const API_BASE_URL = `http://${API_BASE}/api`;
+const API_BASE_URL = `/api`;
 // Default token refresh interval (4 minutes to refresh before the typical 5-minute expiration)
 const DEFAULT_REFRESH_INTERVAL = 4 * 60 * 1000;
 
@@ -29,7 +29,7 @@ export function useAuthToken() {
     setTokenError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh/`, {
+      const response = await fetch(`/api/auth/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

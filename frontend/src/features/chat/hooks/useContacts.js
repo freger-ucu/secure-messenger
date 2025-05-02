@@ -17,7 +17,7 @@ export function useContacts(selectedContactId, setSelectedContactId) {
     if (!accessToken) return;
 
     try {
-      const data = await fetchWithAuth("/chat/");
+      const data = await fetchWithAuth("/api/chat/");
 
       if (data.status === "success" && Array.isArray(data.chats)) {
         let formattedContacts = data.chats.map((chat) => {
@@ -51,7 +51,7 @@ export function useContacts(selectedContactId, setSelectedContactId) {
             if (c.lastMessage && c.lastMessage.ct && c.lastMessage.iv) {
               try {
                 // fetch chat key for this chat
-                const keyData = await fetchWithAuth(`/chat/${c.id}/key/`);
+                const keyData = await fetchWithAuth(`/api/chat/${c.id}/key/`);
                 const privJwk = JSON.parse(
                   sessionStorage.getItem('privateKeyJwk')
                 );

@@ -17,7 +17,7 @@ export function useAddChat(setContacts, setSelectedContactId) {
     setAddingChat(true);
 
     try {
-      const data = await fetchWithAuth("/chat/create/", {
+      const data = await fetchWithAuth("/api/chat/create/", {
         method: "POST",
         body: JSON.stringify({
           user2_username: values.username,
